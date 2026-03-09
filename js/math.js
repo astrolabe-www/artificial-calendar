@@ -286,3 +286,43 @@ const gpt = {
     };
   }
 };
+
+const satjs = {
+  satelliteAzimuthElevation: (localDate, localTime, latDeg, lonDeg, tzOffsetHours, tle) => {
+    const { year, month, day } = localDate;
+    const { hour, minute, second } = localTime;
+    const [tleLine1, tleLine2] = tle;
+
+    // Set the observer
+    const observerGd = {
+      latitude: satellite.degreesToRadians(latDeg),
+      longitude: satellite.degreesToRadians(lonDeg),
+      height: 0
+    };
+
+    // Initialize a satellite record
+    const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+
+    // local date time
+    const utcHour = hour - tzOffsetHours;
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second || 0, 0));
+
+    // GMST for some of the coordinate transforms
+    const gmst = satellite.gstime(dtUtc);
+
+    // Propagate satellite using js date
+    const positionAndVelocity = satellite.propagate(satrec, dtUtc);
+
+    // The positionAndVelocity result is a pair of ECI coordinates.
+    const positionEci = positionAndVelocity.position;
+
+    // ECF and  Look Angles
+    const positionEcf = satellite.eciToEcf(positionEci, gmst);
+    const lookAngles = satellite.ecfToLookAngles(observerGd, positionEcf);
+
+    return {
+      azimuth: rad2deg(lookAngles.azimuth),
+      elevation: rad2deg(lookAngles.elevation)
+    };
+  }
+}

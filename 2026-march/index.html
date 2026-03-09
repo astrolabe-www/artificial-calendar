@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.0.0/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/satellite.js@6.0.2/dist/satellite.min.js"></script>
     <script src="../js/math.js"></script>
     <meta charset="utf-8" />
     <style>
@@ -24,6 +25,26 @@
       lon: -73.997060,
       tz: -4,
     };
+
+    const ISS = [
+      "1 49044U 21066A   26068.44878279  .00007802  00000+0  15192-3 0  9994",
+      "2 49044  51.6321  73.5472 0008027 173.5451 186.5642 15.48542052556062"
+    ];
+
+    const GOES13 = [
+      "1 29155U 06018A   26068.47942120  .00000026  00000+0  00000+0 0  9994",
+      "2 29155   4.2734  77.6373 0061987 273.5862 210.2225  0.98786633 42269"
+    ];
+
+    const GOES16 = [
+      "1 41866U 16071A   26068.48460699 -.00000089  00000+0  00000+0 0  9994",
+      "2 41866   0.1348  88.3659 0002252 227.2519 281.3020  1.00272349 34103"
+    ];
+
+    const GOES19 = [
+      "1 60133U 24119A   26068.49050036 -.00000247  00000+0  00000+0 0  9991",
+      "2 60133   0.0421 326.5488 0001046  69.1609 232.8440  1.00273294  5961"
+    ];
 
     const localTime = { hour: 0, minute: 0, second: 0};
     const localDate = { year: 2026, month: 3, day: 1 };
@@ -83,6 +104,13 @@
           if (elevation >= 0) {
             const { x, y } = azel2xy(azimuth, elevation);
             fill(128, 128, 150, map(elevation, 0, 90, 20, 255));
+            ellipse(x, y, 4, 4);
+          }
+
+          ({ azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz, GOES13));
+          if (elevation >= 0) {
+            const { x, y } = azel2xy(azimuth, elevation);
+            fill(250, 50, 150, map(elevation, 0, 90, 20, 255));
             ellipse(x, y, 4, 4);
           }
         }
