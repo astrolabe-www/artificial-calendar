@@ -57,6 +57,7 @@
         for (let dayMinute = 0; dayMinute < 1440; dayMinute += 30) {
           localTime.hour = Math.floor(dayMinute / 60);
           localTime.minute = parseInt(dayMinute % 60);
+
           let { azimuth, elevation } = hygor.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz);
           if (elevation >= 0) {
             const { x, y } = azel2xy(azimuth, elevation);
@@ -75,6 +76,13 @@
           if (elevation >= 0) {
             const { x, y } = azel2xy(azimuth, elevation);
             fill(250, 128, 20, map(elevation, 0, 90, 20, 255));
+            ellipse(x, y, 4, 4);
+          }
+
+          ({ azimuth, elevation } = gpt.lunarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
+          if (elevation >= 0) {
+            const { x, y } = azel2xy(azimuth, elevation);
+            fill(128, 128, 150, map(elevation, 0, 90, 20, 255));
             ellipse(x, y, 4, 4);
           }
         }

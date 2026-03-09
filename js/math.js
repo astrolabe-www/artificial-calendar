@@ -199,3 +199,90 @@ const omni = {
     return { azimuth, elevation };
   }
 }
+
+const gpt = {
+  lunarAzimuthElevation: (localDate, localTime, latDeg, lonDeg, tzOffsetHours) => {
+    const rad = Math.PI / 180;
+
+    const { year, month, day } = localDate;
+    const { hour, minute, second } = localTime;
+
+    const utcHour = hour - tzOffsetHours;
+    const utcInHour = utcHour + minute / 60.0 + second / 3600.0;
+
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second || 0, 0));
+    const jd = julianDayUTC(dtUtc);
+
+    const days = jd - 2451545.0;
+
+    // mean longitude
+    const L = (218.316 + 13.176396 * days) * rad;
+
+    // mean anomaly
+    const M = (134.963 + 13.064993 * days) * rad;
+
+    // mean distance
+    const F = (93.272 + 13.229350 * days) * rad;
+
+    // mean elongation
+    const D = (297.8501921 + 12.19074912 * days) * rad;
+
+    // ecliptic longitude
+    const lonEcl_ = L + 6.289 * rad * Math.sin(M);
+    const lonEcl =
+      L
+      + (6.289 * rad) * Math.sin(M)
+      + (1.274 * rad)  * Math.sin(2*D - M)
+      + (0.658 * rad)  * Math.sin(2*D)
+      + (0.214 * rad)  * Math.sin(2*M)
+      + (0.110 * rad)  * Math.sin(D);
+
+    // ecliptic latitude
+    const latEcl_ = 5.128 * rad * Math.sin(F);
+    const latEcl =
+      (5.128 * rad) * Math.sin(F)
+      + (0.280 * rad) * Math.sin(M + F)
+      + (0.277 * rad) * Math.sin(M - F)
+      + (0.173 * rad) * Math.sin(2*D - F)
+      + (0.055 * rad) * Math.sin(2*D + F - M)
+      + (0.046 * rad) * Math.sin(2*D - F - M)
+      + (0.033 * rad) * Math.sin(2*D + F)
+      + (0.017 * rad) * Math.sin(2*M + F);
+
+    // obliquity
+    const e = (23.439291 - 0.0000004 * days) * rad; 
+
+    // right ascension
+    const ra = Math.atan2(
+      Math.sin(lonEcl) * Math.cos(e) - Math.tan(latEcl) * Math.sin(e),
+      Math.cos(lonEcl)
+    );
+
+    // declination
+    const dec = Math.asin(
+      Math.sin(latEcl) * Math.cos(e) +
+      Math.cos(latEcl) * Math.sin(e) * Math.sin(lonEcl)
+    );
+
+    const lw = -lonDeg * rad;
+    const phi = latDeg * rad;
+
+    // sidereal time
+    const H = ((280.16 + 360.9856235 * days) * rad - lw) - ra;
+
+    const alt = Math.asin(
+      Math.sin(phi) * Math.sin(dec) +
+      Math.cos(phi) * Math.cos(dec) * Math.cos(H)
+    );
+
+    const az = Math.atan2(
+      Math.sin(H),
+      Math.cos(H) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi)
+    );
+
+    return {
+      azimuth: az / rad + 180.0,
+      elevation: alt / rad
+    };
+  }
+};
