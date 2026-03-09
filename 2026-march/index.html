@@ -31,11 +31,6 @@
       "2 49044  51.6321  73.5472 0008027 173.5451 186.5642 15.48542052556062"
     ];
 
-    const GOES13 = [
-      "1 29155U 06018A   26068.47942120  .00000026  00000+0  00000+0 0  9994",
-      "2 29155   4.2734  77.6373 0061987 273.5862 210.2225  0.98786633 42269"
-    ];
-
     const GOES16 = [
       "1 41866U 16071A   26068.48460699 -.00000089  00000+0  00000+0 0  9994",
       "2 41866   0.1348  88.3659 0002252 227.2519 281.3020  1.00272349 34103"
@@ -71,7 +66,7 @@
 
       ellipse(0, 0, 2 * maxR, 2 * maxR);
 
-      for (let day = 1; day < 31; day += 8) {
+      for (let day = 1; day < 31; day += 6) {
         localDate.day = day;
 
         noStroke();
@@ -80,10 +75,17 @@
           localTime.minute = parseInt(dayMinute % 60);
 
           let { azimuth, elevation } = hygor.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz);
-          if (elevation >= 0) {
+          if (elevation >= 0 && false) {
             const { x, y } = azel2xy(azimuth, elevation);
             fill(250, 200, 20, map(elevation, 0, 90, 20, 255));
             ellipse(x,y,14,14);
+          }
+
+          ({ azimuth, elevation } = omni.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
+          if (elevation >= 0 && false) {
+            const { x, y } = azel2xy(azimuth, elevation);
+            fill(250, 128, 20, map(elevation, 0, 90, 20, 255));
+            ellipse(x, y, 4, 4);
           }
 
           ({ azimuth, elevation } = ultimate.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
@@ -93,13 +95,6 @@
             ellipse(x, y, 8, 8);
           }
 
-          ({ azimuth, elevation } = omni.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
-          if (elevation >= 0) {
-            const { x, y } = azel2xy(azimuth, elevation);
-            fill(250, 128, 20, map(elevation, 0, 90, 20, 255));
-            ellipse(x, y, 4, 4);
-          }
-
           ({ azimuth, elevation } = gpt.lunarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
           if (elevation >= 0) {
             const { x, y } = azel2xy(azimuth, elevation);
@@ -107,10 +102,17 @@
             ellipse(x, y, 4, 4);
           }
 
-          ({ azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz, GOES13));
-          if (elevation >= 0) {
+          ({ azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz, GOES16));
+          if (elevation >= 0 || true) {
             const { x, y } = azel2xy(azimuth, elevation);
             fill(250, 50, 150, map(elevation, 0, 90, 20, 255));
+            ellipse(x, y, 4, 4);
+          }
+
+          ({ azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz, GOES19));
+          if (elevation >= 0 || true) {
+            const { x, y } = azel2xy(azimuth, elevation);
+            fill(150, 50, 250, map(elevation, 0, 90, 20, 255));
             ellipse(x, y, 4, 4);
           }
         }

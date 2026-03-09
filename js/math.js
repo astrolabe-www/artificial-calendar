@@ -5,31 +5,6 @@ const sinDeg = (d) => Math.sin(deg2rad(d));
 const cosDeg = (d) => Math.cos(deg2rad(d));
 
 // ----------------------------
-// Julian day (UTC Date -> float)
-// ----------------------------
-function julianDayUTC(dtUtc) {
-  let year = dtUtc.getUTCFullYear();
-  let month = dtUtc.getUTCMonth() + 1;
-  const day = dtUtc.getUTCDate();
-  const hour =
-    dtUtc.getUTCHours() +
-    dtUtc.getUTCMinutes() / 60 +
-    dtUtc.getUTCSeconds() / 3600 +
-    dtUtc.getUTCMilliseconds() / 3.6e6;
-
-  if (month <= 2) { year -= 1; month += 12; }
-
-  const A = Math.floor(year / 100);
-  const B = 2 - A + Math.floor(A / 4);
-
-  const JD0 = Math.floor(365.25 * (year + 4716))
-            + Math.floor(30.6001 * (month + 1))
-            + day + B - 1524.5;
-
-  return JD0 + hour / 24.0;
-}
-
-// ----------------------------
 // Solar azimuth/elevation (NOAA-style)
 // Returns azimuth_deg (0=N,90=E,180=S,270=W) and elevation_deg
 // ----------------------------
@@ -41,9 +16,8 @@ const hygor = {
     const { hour, minute, second } = localTime;
 
     const utcHour = hour - tzOffsetHours;
-    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second || 0, 0));
-
-    const jd = julianDayUTC(dtUtc);
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
+    const jd = satellite.jday(dtUtc);
     const T = (jd - 2451545.0) / 36525.0;
 
     const L0 = (280.46646 + T * (36000.76983 + 0.0003032 * T)) % 360.0;
@@ -77,7 +51,7 @@ const hygor = {
       1.25 * e * e * Math.sin(2 * Mrad)
     );
 
-    const timeInMinutes = hour * 60.0 + minute + (second || 0) / 60.0;
+    const timeInMinutes = hour * 60.0 + minute + (second / 60.0);
     const timeOffset = eqTime + 4.0 * lonDeg - 60.0 * tzOffsetHours;
     const tst = (timeInMinutes + timeOffset) % 1440.0;
 
@@ -116,32 +90,17 @@ const ultimate = {
     const lat_r = deg2rad(latDeg);
     const lon_r = deg2rad(lonDeg);
 
-    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second || 0, 0));
-    const jd = julianDayUTC(dtUtc);
-
-    const n = jd - 2451545.0;
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
+    const jd = satellite.jday(dtUtc);
+    const days = jd - 2451545.0;
 
     // Mean longitude of the Sun
-    const L = (280.460 + 0.9856474 * n) % 360.0;
+    const L = (280.460 + 0.9856474 * days) % 360.0;
 
-    // Mean anomaly of the Sun
-    const g = (357.528 + 0.9856003 * n) % 360.0;
-    const g_r = deg2rad(g);
-
-    // Geocentric apparent ecliptic longitude of the Sun (adjusted for aberration)
-    const lambda = (L + 1.915 * Math.sin(g_r) + 0.020 * Math.sin(2 * g_r)) % 360.0;
-    const lambda_r = deg2rad(lambda);
-
-    // Mean obliquity of the ecliptic
-    const ep = 23.439 - 0.0000004 * n;
-    const ep_r = deg2rad(ep);
-
-    // Sun's right ascension
-    const alpha_r = Math.atan2(Math.cos(ep_r) * Math.sin(lambda_r), Math.cos(lambda_r));
-    const alpha = rad2deg(alpha_r);
-
-    // Sun's declination
-    const dec_r = Math.asin(Math.sin(ep_r) * Math.sin(lambda_r));
+    // Sun's right ascension and declination
+    const { rtasc, decl } = satellite.sunPos(jd);
+    const alpha = rad2deg(rtasc);
+    const dec_r = decl;
 
     // Equation of Time, apparent solar time minus mean solar time
     const Emin = (L - alpha) * 4.0;
@@ -181,7 +140,7 @@ const omni = {
     const utcHour = hour - tzOffsetHours;
     const hourFrac = utcHour + minute / 60.0 + second / 3600.0;
 
-    const dt = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second || 0, 0));
+    const dt = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
     const d = dayOfYear(dt);
 
     const dec = -23.45 * cosDeg((360.0 / 365.0) * (d + 10.0));
@@ -208,11 +167,9 @@ const gpt = {
     const { hour, minute, second } = localTime;
 
     const utcHour = hour - tzOffsetHours;
-    const utcInHour = utcHour + minute / 60.0 + second / 3600.0;
 
-    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second || 0, 0));
-    const jd = julianDayUTC(dtUtc);
-
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
+    const jd = satellite.jday(dtUtc);
     const days = jd - 2451545.0;
 
     // mean longitude
@@ -228,7 +185,6 @@ const gpt = {
     const D = (297.8501921 + 12.19074912 * days) * rad;
 
     // ecliptic longitude
-    const lonEcl_ = L + 6.289 * rad * Math.sin(M);
     const lonEcl =
       L
       + (6.289 * rad) * Math.sin(M)
@@ -238,7 +194,6 @@ const gpt = {
       + (0.110 * rad)  * Math.sin(D);
 
     // ecliptic latitude
-    const latEcl_ = 5.128 * rad * Math.sin(F);
     const latEcl =
       (5.128 * rad) * Math.sin(F)
       + (0.280 * rad) * Math.sin(M + F)
@@ -293,22 +248,22 @@ const satjs = {
     const { hour, minute, second } = localTime;
     const [tleLine1, tleLine2] = tle;
 
-    // Set the observer
+    // observer
     const observerGd = {
       latitude: satellite.degreesToRadians(latDeg),
       longitude: satellite.degreesToRadians(lonDeg),
       height: 0
     };
 
-    // Initialize a satellite record
-    const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
-
     // local date time
     const utcHour = hour - tzOffsetHours;
-    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second || 0, 0));
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
 
     // GMST for some of the coordinate transforms
     const gmst = satellite.gstime(dtUtc);
+
+    // Initialize a satellite record
+    const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
 
     // Propagate satellite using js date
     const positionAndVelocity = satellite.propagate(satrec, dtUtc);
