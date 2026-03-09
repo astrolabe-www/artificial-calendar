@@ -81,12 +81,21 @@ The T unit is hours, and the factor 15° comes from the fact that the Earth make
 # Moon
 
 Astronomical Algorithms Author: Jean Meeus
-
 Chapter 45: Position of the Moon
 
+Library:
 https://github.com/mourner/suncalc
 
-GPT Code
+Planetary positions:
+https://www.stjarnhimlen.se/comp/ppcomp.html
+
+Basic, with moon example:
+http://www.geoastro.de/elevazmoon/basics/
+
+Nasa moon eclipse:
+https://eclipse.gsfc.nasa.gov/LEvis/LEaltitude.html
+
+## GPT Code
 
 ```js
 function moonAzEl(date, lat, lon) {
@@ -196,3 +205,51 @@ function moonAzEl(date, lat, lon) {
   };
 }
 ```
+
+# Satellites
+
+AstroPy: https://www.youtube.com/watch?v=o9wWCbdcQl0
+
+AstroPy for JS: https://github.com/shashwatak/satellite-js
+
+## TLEs
+
+### Info
+
+https://en.wikipedia.org/wiki/Two-line_element_set
+
+https://www.youtube.com/watch?v=y1zpVQwP4bI
+
+https://www.youtube.com/watch?v=_C-GQy0qTY0
+
+### Conversion to Az/El
+
+High-Level Steps:
+
+1. Propagate TLE using SGP4
+   - Produces satellite position in ECI (TEME) coordinates
+2. Convert ECI → ECEF
+   - Account for Earth rotation (GMST)
+3. Convert ECEF → Topocentric (SEZ or ENU)
+   - Relative to observer
+4. Convert to Azimuth / Elevation
+
+### Sources
+
+1. Celestrak (most popular)
+   - Website: https://celestrak.com
+   - https://celestrak.org/NORAD/elements/index.php?FORMAT=tle
+   - ISS TLE: https://celestrak.com/NORAD/elements/stations.txt
+   - All Active: https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle
+
+2. Space-Track.org (official NORAD source)
+   - Website: https://www.space-track.org
+   - Historical TLEs
+   - Example: Query ISS: NORAD ID 25544
+3. N2YO.com
+   - Website: https://www.n2yo.com
+   - Real-time satellite tracking with TLE download
+4. Heavens-Above
+   - Website: https://www.heavens-above.com
+   - Provides TLEs for popular satellites
+   - Useful for observational astronomy
