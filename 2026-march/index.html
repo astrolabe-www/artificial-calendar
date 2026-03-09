@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.0.0/p5.js"></script>
+    <script src="../js/math.js"></script>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+
+  <script>
+    const NY = {
+      lat: 40.731266,
+      lon: -73.997060,
+      tz: -4,
+    };
+
+    const localTime = { hour: 0, minute: 0, second: 0};
+    const localDate = { year: 2026, month: 3, day: 1 };
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      angleMode(DEGREES);
+      noLoop();
+    }
+
+    function draw() {
+      background(255);
+      push();
+      translate(width/2, height/2);
+      const maxR = min(width/2, height/2);
+
+      const azel2xy = (az, el) => {
+        const r = map(el, 0, 90, maxR, 0);
+        const theta = az - 90;
+        const x = r * cos(theta);
+        const y = r * sin(theta);
+        return { x, y };
+      };
+
+      ellipse(0, 0, 2 * maxR, 2 * maxR);
+
+      for (let day = 1; day < 31; day += 8) {
+        localDate.day = day;
+
+        noStroke();
+        for (let dayMinute = 0; dayMinute < 1440; dayMinute += 30) {
+          localTime.hour = Math.floor(dayMinute / 60);
+          localTime.minute = parseInt(dayMinute % 60);
+          let { azimuth, elevation } = hygor.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz);
+          if (elevation >= 0) {
+            const { x, y } = azel2xy(azimuth, elevation);
+            fill(250, 200, 20, map(elevation, 0, 90, 20, 255));
+            ellipse(x,y,14,14);
+          }
+
+          ({ azimuth, elevation } = ultimate.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
+          if (elevation >= 0) {
+            const { x, y } = azel2xy(azimuth, elevation);
+            fill(250, 128, 20, map(elevation, 0, 90, 20, 255));
+            ellipse(x, y, 8, 8);
+          }
+
+          ({ azimuth, elevation } = omni.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
+          if (elevation >= 0) {
+            const { x, y } = azel2xy(azimuth, elevation);
+            fill(250, 128, 20, map(elevation, 0, 90, 20, 255));
+            ellipse(x, y, 4, 4);
+          }
+        }
+      }
+
+      pop();
+    }
+  </script>
+
+  <body>
+    <main></main>
+  </body>
+</html>

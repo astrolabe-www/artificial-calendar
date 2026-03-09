@@ -1,0 +1,8 @@
+.DS_Store
+.sass-cache
+_site/
+.jekyll-cache/
+__pycache__/
+python/data
+data
+*.ipynb
