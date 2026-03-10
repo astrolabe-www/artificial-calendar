@@ -20,34 +20,31 @@
   </head>
 
   <script>
-    const NY = {
+    const NYC = {
       lat: 40.731266,
       lon: -73.997060,
       tz: -4,
     };
 
-    const ISS = [
-      "1 49044U 21066A   26068.44878279  .00007802  00000+0  15192-3 0  9994",
-      "2 49044  51.6321  73.5472 0008027 173.5451 186.5642 15.48542052556062"
-    ];
+    const FOR = {
+      lat: -3.731862,
+      lon: -38.526669,
+      tz: -3,
+    };
 
-    const GOES16 = [
-      "1 41866U 16071A   26068.48460699 -.00000089  00000+0  00000+0 0  9994",
-      "2 41866   0.1348  88.3659 0002252 227.2519 281.3020  1.00272349 34103"
-    ];
+    const LOCATION = NYC;
 
-    const GOES19 = [
-      "1 60133U 24119A   26068.49050036 -.00000247  00000+0  00000+0 0  9991",
-      "2 60133   0.0421 326.5488 0001046  69.1609 232.8440  1.00273294  5961"
-    ];
-
+    const tles = {};
     const localTime = { hour: 0, minute: 0, second: 0};
     const localDate = { year: 2026, month: 3, day: 1 };
 
-    function setup() {
+    async function setup() {
       createCanvas(windowWidth, windowHeight);
       angleMode(DEGREES);
       noLoop();
+      const tleRes = await fetch("../data/tles.json");
+      const tleJson = await tleRes.json();
+      Object.assign(tles, tleJson.toSorted((a, b) => b.date.localeCompare(a.date))[0]);
     }
 
     function draw() {
@@ -56,8 +53,8 @@
       translate(width/2, height/2);
       const maxR = min(width/2, height/2);
 
-      const azel2xy = (az, el) => {
-        const r = map(el, 0, 90, maxR, 0);
+      const azel2xy = (az, el, rad) => {
+        const r = map(el, 0, 90, rad, 0);
         const theta = az - 90;
         const x = r * cos(theta);
         const y = r * sin(theta);
@@ -66,55 +63,60 @@
 
       ellipse(0, 0, 2 * maxR, 2 * maxR);
 
-      for (let day = 1; day < 31; day += 6) {
+      for (let day = 1; day < 11; day += 1) {
         localDate.day = day;
 
         noStroke();
-        for (let dayMinute = 0; dayMinute < 1440; dayMinute += 30) {
-          localTime.hour = Math.floor(dayMinute / 60);
+        for (let dayMinute = 0; dayMinute < 1440; dayMinute += 1) {
+          localTime.hour = parseInt(dayMinute / 60);
           localTime.minute = parseInt(dayMinute % 60);
 
-          let { azimuth, elevation } = hygor.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz);
-          if (elevation >= 0 && false) {
-            const { x, y } = azel2xy(azimuth, elevation);
-            fill(250, 200, 20, map(elevation, 0, 90, 20, 255));
-            ellipse(x,y,14,14);
-          }
-
-          ({ azimuth, elevation } = omni.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
-          if (elevation >= 0 && false) {
-            const { x, y } = azel2xy(azimuth, elevation);
-            fill(250, 128, 20, map(elevation, 0, 90, 20, 255));
-            ellipse(x, y, 4, 4);
-          }
-
-          ({ azimuth, elevation } = ultimate.solarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
+          let { azimuth, elevation } = ultimate.solarAzimuthElevation(localDate, localTime, LOCATION);
           if (elevation >= 0) {
-            const { x, y } = azel2xy(azimuth, elevation);
-            fill(250, 128, 20, map(elevation, 0, 90, 20, 255));
+            const { x, y } = azel2xy(azimuth, elevation, maxR);
+            fill(0, 0, 0, map(elevation, 0, 90, 20, 255));
             ellipse(x, y, 8, 8);
           }
 
-          ({ azimuth, elevation } = gpt.lunarAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz));
+          ({ azimuth, elevation } = gpt.lunarAzimuthElevation(localDate, localTime, LOCATION));
           if (elevation >= 0) {
-            const { x, y } = azel2xy(azimuth, elevation);
-            fill(128, 128, 150, map(elevation, 0, 90, 20, 255));
+            const { x, y } = azel2xy(azimuth, elevation, maxR);
+            fill(0, 0, 0, map(elevation, 0, 90, 20, 255));
             ellipse(x, y, 4, 4);
           }
 
-          ({ azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz, GOES16));
-          if (elevation >= 0 || true) {
-            const { x, y } = azel2xy(azimuth, elevation);
-            fill(250, 50, 150, map(elevation, 0, 90, 20, 255));
-            ellipse(x, y, 4, 4);
-          }
+          Object.entries(tles.sats).forEach(([k, v]) => {
+            if (!v.name.includes("GOES")) return;
+            const { azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, LOCATION, v.tle);
+            if (elevation >= 0) {
+              const { x, y } = azel2xy(azimuth, elevation, maxR);
+              fill(220, 0, 0, map(elevation, 0, 90, 20, 255));
+              ellipse(x, y, 4, 4);
+            }
+          });
+        }
+      }
 
-          ({ azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, NY.lat, NY.lon, NY.tz, GOES19));
-          if (elevation >= 0 || true) {
-            const { x, y } = azel2xy(azimuth, elevation);
-            fill(150, 50, 250, map(elevation, 0, 90, 20, 255));
-            ellipse(x, y, 4, 4);
-          }
+      const toDraw = Object.entries(tles.sats).filter(([k, v]) => v.name.includes("auka"));
+
+      for (let day = 1; day < 11; day += 1) {
+        localDate.day = day;
+
+        noStroke();
+        for (let daySecond = 0; daySecond < 86400; daySecond += 4) {
+          const fracMinutes = daySecond % 3600;
+          localTime.hour = parseInt(daySecond / 3600);
+          localTime.minute = parseInt(fracMinutes / 60);
+          localTime.second = parseInt(fracMinutes % 60);
+
+          toDraw.forEach(([k, v]) => {
+            const { azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, LOCATION, v.tle);
+            if (elevation >= 0) {
+              const { x, y } = azel2xy(azimuth, elevation, maxR);
+              fill(0, 0, 0, map(elevation, 0, 90, 20, 255));
+              ellipse(x, y, 4, 4);
+            }
+          });
         }
       }
 

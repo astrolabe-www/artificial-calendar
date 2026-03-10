@@ -9,11 +9,12 @@ const cosDeg = (d) => Math.cos(deg2rad(d));
 // Returns azimuth_deg (0=N,90=E,180=S,270=W) and elevation_deg
 // ----------------------------
 const hygor = {
-  solarAzimuthElevation: (localDate, localTime, latDeg, lonDeg, tzOffsetHours) => {
+  solarAzimuthElevation: (localDate, localTime, location) => {
     const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
     const { year, month, day } = localDate;
     const { hour, minute, second } = localTime;
+    const { lat:latDeg, lon:lonDeg, tz:tzOffsetHours } = location;
 
     const utcHour = hour - tzOffsetHours;
     const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
@@ -81,9 +82,10 @@ const hygor = {
 // ----------------------------
 const ultimate = {
   // https://www.sciencedirect.com/science/article/pii/S0960148121004031
-  solarAzimuthElevation: (localDate, localTime, latDeg, lonDeg, tzOffsetHours) => {
+  solarAzimuthElevation: (localDate, localTime, location) => {
     const { year, month, day } = localDate;
     const { hour, minute, second } = localTime;
+    const { lat:latDeg, lon:lonDeg, tz:tzOffsetHours } = location;
 
     const utcHour = hour - tzOffsetHours;
     const utcInHour = utcHour + minute / 60.0 + second / 3600.0;
@@ -127,7 +129,7 @@ const ultimate = {
 
 const omni = {
   // https://www.omnicalculator.com/physics/sun-angle
-  solarAzimuthElevation: (localDate, localTime, latDeg, lonDeg, tzOffsetHours) => {
+  solarAzimuthElevation: (localDate, localTime, location) => {
     const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
     const dayOfYear = (date) => Math.floor(
@@ -136,6 +138,7 @@ const omni = {
 
     const { year, month, day } = localDate;
     const { hour, minute, second } = localTime;
+    const { lat:latDeg, lon:lonDeg, tz:tzOffsetHours } = location;
 
     const utcHour = hour - tzOffsetHours;
     const hourFrac = utcHour + minute / 60.0 + second / 3600.0;
@@ -160,11 +163,12 @@ const omni = {
 }
 
 const gpt = {
-  lunarAzimuthElevation: (localDate, localTime, latDeg, lonDeg, tzOffsetHours) => {
+  lunarAzimuthElevation: (localDate, localTime, location) => {
     const rad = Math.PI / 180;
 
     const { year, month, day } = localDate;
     const { hour, minute, second } = localTime;
+    const { lat:latDeg, lon:lonDeg, tz:tzOffsetHours } = location;
 
     const utcHour = hour - tzOffsetHours;
 
@@ -243,9 +247,10 @@ const gpt = {
 };
 
 const satjs = {
-  satelliteAzimuthElevation: (localDate, localTime, latDeg, lonDeg, tzOffsetHours, tle) => {
+  satelliteAzimuthElevation: (localDate, localTime, location, tle) => {
     const { year, month, day } = localDate;
     const { hour, minute, second } = localTime;
+    const { lat:latDeg, lon:lonDeg, tz:tzOffsetHours } = location;
     const [tleLine1, tleLine2] = tle;
 
     // observer
