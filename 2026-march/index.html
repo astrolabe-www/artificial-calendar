@@ -4,6 +4,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.0.0/p5.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/satellite.js@6.0.2/dist/satellite.min.js"></script>
     <script src="../js/math.js"></script>
+    <script src="../js/path.js"></script>
     <meta charset="utf-8" />
     <style>
       html,
@@ -47,43 +48,62 @@
       Object.assign(tles, tleJson.toSorted((a, b) => b.date.localeCompare(a.date))[0]);
     }
 
+    function drawElevationRings(rad) {
+      push();
+      stroke(0, 255);
+      ellipse(0, 0, 2 * rad, 2 * rad);
+
+      stroke(0, 64);
+      for (let deg = 15; deg < 90; deg += 15) {
+        // const mRadius = rad * Math.cos(deg/180 * Math.PI);
+        const mRadius = map(deg, 0, 90, rad, 0);
+        ellipse(0, 0, 2 * mRadius, 2 * mRadius);
+      }
+      pop();
+    }
+
+    function azel2xy(az, el, rad) {
+      // const r = rad * Math.cos(el / 180 * Math.PI);
+      const r = map(el, 0, 90, rad, 0);
+      const theta = az - 90;
+      const x = r * cos(theta);
+      const y = r * sin(theta);
+      return { x, y };
+    };
+
     function draw() {
       background(255);
       push();
       translate(width/2, height/2);
       const maxR = min(width/2, height/2);
 
-      const azel2xy = (az, el, rad) => {
-        const r = map(el, 0, 90, rad, 0);
-        const theta = az - 90;
-        const x = r * cos(theta);
-        const y = r * sin(theta);
-        return { x, y };
-      };
+      drawElevationRings(maxR);
 
-      ellipse(0, 0, 2 * maxR, 2 * maxR);
+      const visibleSun = allVisible(2026, 3, 11, LOCATION, ultimate.solarAzimuthElevation, 1, 1*60);
+        visibleSun.forEach(p => {
+          p.path.forEach(({ azimuth, elevation }) => {
+            const { x, y } = azel2xy(azimuth, elevation, maxR);
+            fill(0);
+            ellipse(x, y, 8, 8);
+          })
+        });
 
-      for (let day = 1; day < 11; day += 1) {
+        const visibleMoon = allVisible(2026, 3, 11, LOCATION, gpt.lunarAzimuthElevation, 1, 1*60);
+        visibleMoon.forEach(p => {
+          p.path.forEach(({ azimuth, elevation }) => {
+            const { x, y } = azel2xy(azimuth, elevation, maxR);
+            fill(0);
+            ellipse(x, y, 4, 4);
+          })
+        });
+
+      for (let day = 1; day < 31; day += 1) {
         localDate.day = day;
 
         noStroke();
-        for (let dayMinute = 0; dayMinute < 1440; dayMinute += 1) {
+        for (let dayMinute = 0; dayMinute < 1440; dayMinute += 15) {
           localTime.hour = parseInt(dayMinute / 60);
           localTime.minute = parseInt(dayMinute % 60);
-
-          let { azimuth, elevation } = ultimate.solarAzimuthElevation(localDate, localTime, LOCATION);
-          if (elevation >= 0) {
-            const { x, y } = azel2xy(azimuth, elevation, maxR);
-            fill(0, 0, 0, map(elevation, 0, 90, 20, 255));
-            ellipse(x, y, 8, 8);
-          }
-
-          ({ azimuth, elevation } = gpt.lunarAzimuthElevation(localDate, localTime, LOCATION));
-          if (elevation >= 0) {
-            const { x, y } = azel2xy(azimuth, elevation, maxR);
-            fill(0, 0, 0, map(elevation, 0, 90, 20, 255));
-            ellipse(x, y, 4, 4);
-          }
 
           Object.entries(tles.sats).forEach(([k, v]) => {
             if (!v.name.includes("GOES")) return;
@@ -91,34 +111,21 @@
             if (elevation >= 0) {
               const { x, y } = azel2xy(azimuth, elevation, maxR);
               fill(220, 0, 0, map(elevation, 0, 90, 20, 255));
+              noStroke();
               ellipse(x, y, 4, 4);
             }
           });
         }
       }
 
-      const toDraw = Object.entries(tles.sats).filter(([k, v]) => v.name.includes("auka"));
-
-      for (let day = 1; day < 11; day += 1) {
-        localDate.day = day;
-
-        noStroke();
-        for (let daySecond = 0; daySecond < 86400; daySecond += 4) {
-          const fracMinutes = daySecond % 3600;
-          localTime.hour = parseInt(daySecond / 3600);
-          localTime.minute = parseInt(fracMinutes / 60);
-          localTime.second = parseInt(fracMinutes % 60);
-
-          toDraw.forEach(([k, v]) => {
-            const { azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, LOCATION, v.tle);
-            if (elevation >= 0) {
-              const { x, y } = azel2xy(azimuth, elevation, maxR);
-              fill(0, 0, 0, map(elevation, 0, 90, 20, 255));
-              ellipse(x, y, 4, 4);
-            }
-          });
-        }
-      }
+      const visibleAuka = allVisible(2026, 3, 11, LOCATION, satjs.satelliteAzimuthElevation, 1, 4, tles.sats["nauka"].tle);
+      visibleAuka.forEach(p => {
+        p.path.forEach(({ azimuth, elevation }) => {
+          const { x, y } = azel2xy(azimuth, elevation, maxR);
+          fill(120,120,200);
+          ellipse(x, y, 4, 4);
+        })
+      });
 
       pop();
     }
