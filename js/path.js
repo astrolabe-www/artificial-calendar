@@ -1,4 +1,23 @@
-function getVisiblePasses(year, month, location, toAzEl, options) {
+async function getTlesFromUrl(url) {
+  const tleRes = await fetch(url);
+  const tleTxt = await tleRes.text();
+  const tleLines = tleTxt.split("\n");
+
+  const tles = [];
+
+  for (let ln = 0; ln+2 < tleLines.length; ln += 3) {
+    tles.push({
+      name: tleLines[ln + 0].trim(),
+      tle: [
+        tleLines[ln + 1].trim(),
+        tleLines[ln + 2].trim(),
+      ]
+    });
+  }
+  return tles;
+}
+
+function getVisiblePaths(year, month, location, toAzEl, options) {
   const paths = [];
 
   const localTime = { hour: 0, minute: 0, second: 0 };
@@ -41,4 +60,21 @@ function getVisiblePasses(year, month, location, toAzEl, options) {
   }
 
   return paths;
+}
+
+function getStationaryPaths(year, month, location, toAzEl, options) {
+  const visiblePaths = getVisiblePaths(year, month, location, toAzEl, options);
+
+  // TODO: average locations
+  //       keep points close 1-std from average
+
+  return visiblePaths;
+}
+
+function getHighestElevation(path) {
+  return path.reduce((acc, azel) => min(acc, azel.elevation), 0);
+}
+
+function getHighestPath(paths) {
+  return paths.reduce((acc, path) => getHighestElevation(path.path) > getHighestElevation(acc.path) ? path : acc);
 }

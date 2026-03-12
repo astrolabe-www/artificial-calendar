@@ -34,32 +34,43 @@
     };
 
     const LOCATION = NYC;
+    const MONTH = 3;
+    const NDAYS = 12;
 
-    const tles = {};
+    const URLS = {
+      GOES: "https://celestrak.org/NORAD/elements/gp.php?GROUP=goes&FORMAT=tle",
+      NOAA: "https://celestrak.org/NORAD/elements/gp.php?GROUP=noaa&FORMAT=tle",
+      STARLINK: "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle",
+      KUIPER: "https://celestrak.org/NORAD/elements/gp.php?GROUP=kuiper&FORMAT=tle",
+      ISSS: "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle",
+    };
 
     const SUN_OPT = {
-      numDays: 11,
+      numDays: NDAYS,
       dayStep: 7,
       secondStep: 60,
     };
 
     const MOON_OPT = {
-      numDays: 11,
+      numDays: NDAYS,
       dayStep: 1,
       secondStep: 60,
     };
 
     const SAT_OPT = {
-      numDays: 11,
+      numDays: NDAYS,
       dayStep: 1,
       secondStep: 4,
     };
 
     const STA_OPT = {
-      numDays: 11,
+      numDays: NDAYS,
       dayStep: 1,
       secondStep: 6*60*60,
     };
+
+    const tles = {};
+    const TLES = {};
 
     async function setup() {
       createCanvas(windowWidth, windowHeight);
@@ -69,6 +80,11 @@
       const tleRes = await fetch("../data/tles.json");
       const tleJson = await tleRes.json();
       Object.assign(tles, tleJson.toSorted((a, b) => b.date.localeCompare(a.date))[0]);
+
+      TLES.GOES = await getTlesFromUrl(URLS.GOES);
+      TLES.NOAA = await getTlesFromUrl(URLS.NOAA);
+      TLES.STARLINK = await getTlesFromUrl(URLS.STARLINK);
+      TLES.KUIPER = await getTlesFromUrl(URLS.KUIPER);
     }
 
     function drawElevationRings(rad) {
@@ -94,6 +110,13 @@
       return { x, y };
     };
 
+    function drawPath(path, diam, rad) {
+      path.path.forEach(({ azimuth, elevation }) => {
+        const { x, y } = azel2xy(azimuth, elevation, rad);
+        ellipse(x, y, diam);
+      });
+    }
+
     function draw() {
       background(255);
       push();
@@ -102,47 +125,65 @@
 
       drawElevationRings(maxR);
 
-      const visibleSun = getVisiblePasses(2026, 3, LOCATION, ultimate.solarAzimuthElevation, SUN_OPT);
+      const visibleSun = getVisiblePaths(2026, MONTH, LOCATION, ultimate.solarAzimuthElevation, SUN_OPT);
       visibleSun.forEach(p => {
-        p.path.forEach(({ azimuth, elevation }) => {
-          const { x, y } = azel2xy(azimuth, elevation, maxR);
-          fill(0);
-          ellipse(x, y, 8, 8);
-        })
+        fill(0);
+        drawPath(p, 8, maxR);
       });
 
-      const visibleMoon = getVisiblePasses(2026, 3, LOCATION, gpt.lunarAzimuthElevation, MOON_OPT);
+      const visibleMoon = getVisiblePaths(2026, MONTH, LOCATION, gpt.lunarAzimuthElevation, MOON_OPT);
       visibleMoon.forEach(p => {
-        p.path.forEach(({ azimuth, elevation }) => {
-          const { x, y } = azel2xy(azimuth, elevation, maxR);
-          fill(0);
-          ellipse(x, y, 4, 4);
-        })
+        fill(0);
+        drawPath(p, 4, maxR);
       });
 
-      for (let gn = 16; gn < 20; gn += 1) {
-        STA_OPT["tle"] = tles.sats[`goes${gn}`].tle;
-        const visibleGoes = getVisiblePasses(2026, 3, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
+      TLES.GOES.forEach(s => {
+        STA_OPT["tle"] = s.tle;
+        console.log(s.name);
+        const visibleGoes = getStationaryPaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
         visibleGoes.forEach(p => {
-          p.path.forEach(({ azimuth, elevation }) => {
-            const { x, y } = azel2xy(azimuth, elevation, maxR);
-            fill(220,20,20);
-            ellipse(x, y, 4, 4);
-          })
+          fill(220,20,20);
+          drawPath(p, 4, maxR);
         });
-      }
-
-      SAT_OPT["tle"] = tles.sats["nauka"].tle;
-      const visibleAuka = getVisiblePasses(2026, 3, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
-
-      // first Auka
-      visibleAuka[0].path.forEach(({ azimuth, elevation }) => {
-        const { x, y } = azel2xy(azimuth, elevation, maxR);
-        fill(200,200,220);
-        ellipse(x, y, 4, 4);
       });
 
-      // TODO: find highest AUKA
+      TLES.NOAA.forEach(s => {
+        SAT_OPT["tle"] = s.tle;
+        console.log(s.name);
+        const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
+        const highest = getHighestPath(visible);
+        fill(120, 120, 220);
+        drawPath(highest, 4, maxR);
+      });
+
+      // TODO: plot highest of the ones that come by the most
+      TLES.STARLINK.slice(0, 5).forEach(s => {
+        SAT_OPT["tle"] = s.tle;
+        console.log(s.name);
+        const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
+        const highest = getHighestPath(visible);
+        fill(200,200,220);
+        drawPath(highest, 4, maxR);
+      });
+
+      // TODO: plot highest of the ones that come by the most
+      TLES.KUIPER.slice(0, 5).forEach(s => {
+        SAT_OPT["tle"] = s.tle;
+        console.log(s.name);
+        const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
+        const highest = getHighestPath(visible);
+        fill(200,200,220);
+        drawPath(highest, 4, maxR);
+      });
+
+      // space stations and special flights
+      ["nauka", "hubble", "crew12", "soyuz"].forEach(sat => {
+        SAT_OPT["tle"] = tles.sats[sat].tle;
+        const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
+        const highest = getHighestPath(visible);
+        fill(120, 220, 120);
+        drawPath(highest, 4, maxR);
+      });
 
       pop();
     }
