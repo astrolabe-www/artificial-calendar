@@ -1,15 +1,14 @@
-// TODO:
-// options: { dayStep, secondStep, tle }
-function allVisible(year, month, nDays, location, toAzEl, dayStep=1, secondStep=60, tle=null) {
+function getVisiblePasses(year, month, location, toAzEl, options) {
   const paths = [];
 
   const localTime = { hour: 0, minute: 0, second: 0 };
   const localDate = { year: year, month: month, day: 1 };
+  const { numDays=28, dayStep=1, secondStep=60, tle=null } = options;
 
   let cPath = null;
   let pElevation = -1;
 
-  for (let day = 1; day <= nDays; day += dayStep) {
+  for (let day = 1; day <= numDays; day += dayStep) {
     localDate.day = day;
 
     for (let daySecond = 0; daySecond < 86400; daySecond += secondStep) {
@@ -35,5 +34,11 @@ function allVisible(year, month, nDays, location, toAzEl, dayStep=1, secondStep=
       pElevation = elevation;
     }
   }
+
+  if (cPath) {
+    paths.push(structuredClone(cPath));
+    cPath = null;
+  }
+
   return paths;
 }

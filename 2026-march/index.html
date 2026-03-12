@@ -36,13 +36,36 @@
     const LOCATION = NYC;
 
     const tles = {};
-    const localTime = { hour: 0, minute: 0, second: 0};
-    const localDate = { year: 2026, month: 3, day: 1 };
+
+    const SUN_OPT = {
+      numDays: 11,
+      dayStep: 7,
+      secondStep: 60,
+    };
+
+    const MOON_OPT = {
+      numDays: 11,
+      dayStep: 1,
+      secondStep: 60,
+    };
+
+    const SAT_OPT = {
+      numDays: 11,
+      dayStep: 1,
+      secondStep: 4,
+    };
+
+    const STA_OPT = {
+      numDays: 11,
+      dayStep: 1,
+      secondStep: 6*60*60,
+    };
 
     async function setup() {
       createCanvas(windowWidth, windowHeight);
       angleMode(DEGREES);
       noLoop();
+      noStroke();
       const tleRes = await fetch("../data/tles.json");
       const tleJson = await tleRes.json();
       Object.assign(tles, tleJson.toSorted((a, b) => b.date.localeCompare(a.date))[0]);
@@ -79,53 +102,47 @@
 
       drawElevationRings(maxR);
 
-      const visibleSun = allVisible(2026, 3, 11, LOCATION, ultimate.solarAzimuthElevation, 1, 1*60);
-        visibleSun.forEach(p => {
-          p.path.forEach(({ azimuth, elevation }) => {
-            const { x, y } = azel2xy(azimuth, elevation, maxR);
-            fill(0);
-            ellipse(x, y, 8, 8);
-          })
-        });
-
-        const visibleMoon = allVisible(2026, 3, 11, LOCATION, gpt.lunarAzimuthElevation, 1, 1*60);
-        visibleMoon.forEach(p => {
-          p.path.forEach(({ azimuth, elevation }) => {
-            const { x, y } = azel2xy(azimuth, elevation, maxR);
-            fill(0);
-            ellipse(x, y, 4, 4);
-          })
-        });
-
-      for (let day = 1; day < 31; day += 1) {
-        localDate.day = day;
-
-        noStroke();
-        for (let dayMinute = 0; dayMinute < 1440; dayMinute += 15) {
-          localTime.hour = parseInt(dayMinute / 60);
-          localTime.minute = parseInt(dayMinute % 60);
-
-          Object.entries(tles.sats).forEach(([k, v]) => {
-            if (!v.name.includes("GOES")) return;
-            const { azimuth, elevation } = satjs.satelliteAzimuthElevation(localDate, localTime, LOCATION, v.tle);
-            if (elevation >= 0) {
-              const { x, y } = azel2xy(azimuth, elevation, maxR);
-              fill(220, 0, 0, map(elevation, 0, 90, 20, 255));
-              noStroke();
-              ellipse(x, y, 4, 4);
-            }
-          });
-        }
-      }
-
-      const visibleAuka = allVisible(2026, 3, 11, LOCATION, satjs.satelliteAzimuthElevation, 1, 4, tles.sats["nauka"].tle);
-      visibleAuka.forEach(p => {
+      const visibleSun = getVisiblePasses(2026, 3, LOCATION, ultimate.solarAzimuthElevation, SUN_OPT);
+      visibleSun.forEach(p => {
         p.path.forEach(({ azimuth, elevation }) => {
           const { x, y } = azel2xy(azimuth, elevation, maxR);
-          fill(120,120,200);
+          fill(0);
+          ellipse(x, y, 8, 8);
+        })
+      });
+
+      const visibleMoon = getVisiblePasses(2026, 3, LOCATION, gpt.lunarAzimuthElevation, MOON_OPT);
+      visibleMoon.forEach(p => {
+        p.path.forEach(({ azimuth, elevation }) => {
+          const { x, y } = azel2xy(azimuth, elevation, maxR);
+          fill(0);
           ellipse(x, y, 4, 4);
         })
       });
+
+      for (let gn = 16; gn < 20; gn += 1) {
+        STA_OPT["tle"] = tles.sats[`goes${gn}`].tle;
+        const visibleGoes = getVisiblePasses(2026, 3, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
+        visibleGoes.forEach(p => {
+          p.path.forEach(({ azimuth, elevation }) => {
+            const { x, y } = azel2xy(azimuth, elevation, maxR);
+            fill(220,20,20);
+            ellipse(x, y, 4, 4);
+          })
+        });
+      }
+
+      SAT_OPT["tle"] = tles.sats["nauka"].tle;
+      const visibleAuka = getVisiblePasses(2026, 3, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
+
+      // first Auka
+      visibleAuka[0].path.forEach(({ azimuth, elevation }) => {
+        const { x, y } = azel2xy(azimuth, elevation, maxR);
+        fill(200,200,220);
+        ellipse(x, y, 4, 4);
+      });
+
+      // TODO: find highest AUKA
 
       pop();
     }
