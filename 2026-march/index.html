@@ -42,13 +42,13 @@
     const SUN_OPT = {
       numDays: NDAYS,
       dayStep: 7,
-      secondStep: 60,
+      secondStep: 2*60,
     };
 
     const MOON_OPT = {
       numDays: NDAYS,
       dayStep: 1,
-      secondStep: 60,
+      secondStep: 2*60,
     };
 
     const SAT_OPT = {
@@ -64,7 +64,7 @@
     };
 
     const TLES = {};
-    const SSS = ["ISS (NAUKA)", "CREW DRAGON 12", "SOYUZ-MS 28"];
+    const SSS = ["ISS (NAUKA)", "CREW DRAGON 12", "SOYUZ-MS 28", "CSS (TIANHE)"];
     const SCI = ["FGRST (GLAST)", "HST", "TERRA", "CXO", "POLAR"];
 
     async function fetchTles() {
@@ -117,11 +117,18 @@
       return { x, y };
     };
 
-    function drawPath(path, diam, rad) {
+    function drawPath(path, diam, c, rad) {
+      push();
+      noFill();
+      stroke(c);
+      strokeWeight(diam);
+      beginShape();
       path.path.forEach(({ azimuth, elevation }) => {
         const { x, y } = azel2xy(azimuth, elevation, rad);
-        ellipse(x, y, diam);
+        vertex(x, y);
       });
+      endShape();
+      pop();
     }
 
     function draw() {
@@ -136,51 +143,40 @@
       console.log("SUN");
       const visibleSun = getVisiblePaths(2026, MONTH, LOCATION, ultimate.solarAzimuthElevation, SUN_OPT);
       visibleSun.forEach(p => {
-        fill(0);
-        drawPath(p, 8, maxR);
+        drawPath(p, 8, color(220, 120, 0, 100), maxR);
       });
 
       console.log("MOON");
       const visibleMoon = getVisiblePaths(2026, MONTH, LOCATION, gpt.lunarAzimuthElevation, MOON_OPT);
-      visibleMoon.forEach(p => {
-        fill(0);
-        drawPath(p, 5, maxR);
-      });
+      for (let idx = 0; idx < visibleMoon.length; idx += 4) {
+        drawPath(visibleMoon[idx], 4, color(0,0,0, 100), maxR);
+      }
 
       TLES.goes.forEach(s => {
         STA_OPT["tle"] = s.tle;
         console.log(s.name);
         const visibleGoes = getStationaryPaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
         visibleGoes.forEach(p => {
-          fill(220, 20, 20, 100);
-          drawPath(p, dotDim, maxR);
+          drawPath(p, dotDim, color(220, 20, 20), maxR);
         });
       });
 
       const noaaMostVisited = getMostVisitedHighestLowestPaths(TLES.noaa, SAT_OPT);
       console.log(noaaMostVisited.name);
-      fill(18, 18, 220);
-      drawPath(noaaMostVisited.highestPath, dotDim, maxR);
-      drawPath(noaaMostVisited.lowestPath, dotDim, maxR);
+      drawPath(noaaMostVisited.highestPath, dotDim, color(18, 18, 220), maxR);
 
       const starlinkMostVisited = getMostVisitedHighestLowestPaths(TLES.starlink.slice(0, 32), SAT_OPT);
       console.log(starlinkMostVisited.name);
-      fill(200, 18, 22);
-      drawPath(starlinkMostVisited.highestPath, dotDim, maxR);
-      drawPath(starlinkMostVisited.lowestPath, dotDim, maxR);
+      drawPath(starlinkMostVisited.highestPath, dotDim, color(200, 18, 22), maxR);
 
       const kuiperMostVisited = getMostVisitedHighestLowestPaths(TLES.kuiper.slice(0, 32), SAT_OPT);
       console.log(kuiperMostVisited.name);
-      fill(20, 180, 22);
-      drawPath(kuiperMostVisited.highestPath, dotDim, maxR);
-      drawPath(kuiperMostVisited.lowestPath, dotDim, maxR);
+      drawPath(kuiperMostVisited.highestPath, dotDim, color(20, 180, 22), maxR);
 
       const sssTles = TLES.sss.filter(s => SSS.includes(s.name));
       const sssMostVisited = getMostVisitedHighestLowestPaths(sssTles, SAT_OPT);
       console.log(sssMostVisited.name);
-      fill(220, 10, 220);
-      drawPath(sssMostVisited.highestPath, dotDim, maxR);
-      drawPath(sssMostVisited.lowestPath, dotDim, maxR);
+      drawPath(sssMostVisited.highestPath, dotDim, color(220, 10, 220), maxR);
 
       SCI.forEach(name => {
         const s = TLES.sci.filter(s => s.name == name)[0];
@@ -188,9 +184,7 @@
         console.log(s.name);
         const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
         const [highest, lowest] = getHighestLowestPaths(visible);
-        fill(180, 180, 220);
-        drawPath(highest, dotDim, maxR);
-        drawPath(lowest, dotDim, maxR);
+        drawPath(highest, dotDim, color(180, 180, 220), maxR);
       });
 
       pop();
