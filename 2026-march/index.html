@@ -35,7 +35,7 @@
 
     const LOCATION = NYC;
     const MONTH = 3;
-    const NDAYS = 12;
+    const NDAYS = 21;
 
     const DATADATE = "20260313";
 
@@ -129,6 +129,7 @@
       push();
       translate(width/2, height/2);
       const maxR = min(width/2, height/2);
+      const dotDim = 2;
 
       drawElevationRings(maxR);
 
@@ -143,7 +144,7 @@
       const visibleMoon = getVisiblePaths(2026, MONTH, LOCATION, gpt.lunarAzimuthElevation, MOON_OPT);
       visibleMoon.forEach(p => {
         fill(0);
-        drawPath(p, 4, maxR);
+        drawPath(p, 5, maxR);
       });
 
       TLES.goes.forEach(s => {
@@ -152,57 +153,44 @@
         const visibleGoes = getStationaryPaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
         visibleGoes.forEach(p => {
           fill(220, 20, 20, 100);
-          drawPath(p, 4, maxR);
+          drawPath(p, dotDim, maxR);
         });
       });
 
-      TLES.noaa.forEach(s => {
-        SAT_OPT["tle"] = s.tle;
-        console.log(s.name);
-        const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
-        const highest = getHighestPath(visible);
-        fill(120, 120, 220);
-        drawPath(highest, 4, maxR);
-      });
+      const noaaMostVisited = getMostVisitedHighestLowestPaths(TLES.noaa, SAT_OPT);
+      console.log(noaaMostVisited.name);
+      fill(18, 18, 220);
+      drawPath(noaaMostVisited.highestPath, dotDim, maxR);
+      drawPath(noaaMostVisited.lowestPath, dotDim, maxR);
 
-      SSS.forEach(name => {
-        const s = TLES.sss.filter(s => s.name == name)[0];
-        SAT_OPT["tle"] = s.tle;
-        console.log(s.name);
-        const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
-        const highest = getHighestPath(visible);
-        fill(120, 120, 220);
-        drawPath(highest, 4, maxR);
-      });
+      const starlinkMostVisited = getMostVisitedHighestLowestPaths(TLES.starlink.slice(0, 32), SAT_OPT);
+      console.log(starlinkMostVisited.name);
+      fill(200, 18, 22);
+      drawPath(starlinkMostVisited.highestPath, dotDim, maxR);
+      drawPath(starlinkMostVisited.lowestPath, dotDim, maxR);
+
+      const kuiperMostVisited = getMostVisitedHighestLowestPaths(TLES.kuiper.slice(0, 32), SAT_OPT);
+      console.log(kuiperMostVisited.name);
+      fill(20, 180, 22);
+      drawPath(kuiperMostVisited.highestPath, dotDim, maxR);
+      drawPath(kuiperMostVisited.lowestPath, dotDim, maxR);
+
+      const sssTles = TLES.sss.filter(s => SSS.includes(s.name));
+      const sssMostVisited = getMostVisitedHighestLowestPaths(sssTles, SAT_OPT);
+      console.log(sssMostVisited.name);
+      fill(220, 10, 220);
+      drawPath(sssMostVisited.highestPath, dotDim, maxR);
+      drawPath(sssMostVisited.lowestPath, dotDim, maxR);
 
       SCI.forEach(name => {
         const s = TLES.sci.filter(s => s.name == name)[0];
         SAT_OPT["tle"] = s.tle;
         console.log(s.name);
         const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
-        const highest = getHighestPath(visible);
-        fill(120, 120, 220);
-        drawPath(highest, 4, maxR);
-      });
-
-      // TODO: plot highest of the ones that come by the most
-      TLES.starlink.slice(0, 32).forEach(s => {
-        SAT_OPT["tle"] = s.tle;
-        console.log(s.name);
-        const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
-        const highest = getHighestPath(visible);
-        fill(200,200,220);
-        drawPath(highest, 4, maxR);
-      });
-
-      // TODO: plot highest of the ones that come by the most
-      TLES.kuiper.slice(0, 32).forEach(s => {
-        SAT_OPT["tle"] = s.tle;
-        console.log(s.name);
-        const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
-        const highest = getHighestPath(visible);
-        fill(200,200,220);
-        drawPath(highest, 4, maxR);
+        const [highest, lowest] = getHighestLowestPaths(visible);
+        fill(180, 180, 220);
+        drawPath(highest, dotDim, maxR);
+        drawPath(lowest, dotDim, maxR);
       });
 
       pop();

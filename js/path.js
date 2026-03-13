@@ -85,9 +85,37 @@ function getStationaryPaths(year, month, location, toAzEl, options) {
 }
 
 function getHighestElevation(path) {
-  return path.reduce((acc, azel) => min(acc, azel.elevation), 0);
+  return path.reduce((acc, azel) => max(acc, azel.elevation), 0);
 }
 
-function getHighestPath(paths) {
-  return paths.reduce((acc, path) => getHighestElevation(path.path) > getHighestElevation(acc.path) ? path : acc);
+function getHighestLowestPaths(paths) {
+  paths.forEach(p => {
+    p.high = getHighestElevation(p.path);
+  });
+
+  const highest = paths.reduce((acc, path) => path.high > acc.high ? path : acc);
+  const lowest = paths.filter(path => path.high > 5).reduce((acc, path) => path.high < acc.high ? path : acc);
+
+  return [highest, lowest];
+}
+
+function getMostVisited(sats) {
+  const byPathCount = sats.toSorted((a, b) => b.paths.length - a.paths.length);
+  return byPathCount[0];
+}
+
+function getMostVisitedHighestLowestPaths(tles, options) {
+  const allSats = tles.map(s => {
+    options["tle"] = s.tle;
+    console.log(s.name);
+    return {
+      name: s.name,
+      paths: getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, options),
+    };
+  });
+
+  const mostVisited = getMostVisited(allSats);
+  const [mostVisitedHighest, mostVisitedLowest] = getHighestLowestPaths(mostVisited.paths);
+
+  return { name: mostVisited.name, highestPath: mostVisitedHighest, lowestPath: mostVisitedLowest };
 }
