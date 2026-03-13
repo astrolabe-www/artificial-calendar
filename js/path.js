@@ -5,7 +5,7 @@ async function getTlesFromUrl(url) {
 
   const tles = [];
 
-  for (let ln = 0; ln+2 < tleLines.length; ln += 3) {
+  for (let ln = 0; ln < tleLines.length - 2; ln += 3) {
     tles.push({
       name: tleLines[ln + 0].trim(),
       tle: [
@@ -22,7 +22,9 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
 
   const localTime = { hour: 0, minute: 0, second: 0 };
   const localDate = { year: year, month: month, day: 1 };
-  const { numDays=28, dayStep=1, secondStep=60, tle=null } = options;
+  const { numDays = 28, dayStep = 1, secondStep:secondStep0 = 60, tle = null } = options;
+
+  let secondStep = secondStep0;
 
   let cPath = null;
   let pElevation = -1;
@@ -38,6 +40,12 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
 
       const { azimuth, elevation } = toAzEl(localDate, localTime, location, tle);
       if (elevation >= 0) {
+        if (secondStep > secondStep0) {
+          daySecond -= secondStep;
+          secondStep = secondStep0;
+          continue;
+        }
+
         if (pElevation < 0) {
           cPath = { path: [] };
           cPath.start = new Date(localDate.year, localDate.month - 1, day, localTime.hour, localTime.minute, localTime.second, 0);
@@ -48,6 +56,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
         if (pElevation > 0) {
           paths.push(structuredClone(cPath));
           cPath = null;
+          secondStep *= 15;
         }
       }
       pElevation = elevation;
@@ -65,10 +74,14 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
 function getStationaryPaths(year, month, location, toAzEl, options) {
   const visiblePaths = getVisiblePaths(year, month, location, toAzEl, options);
 
-  // TODO: average locations
-  //       keep points close 1-std from average
+  visiblePaths.forEach(path => {
+    const { sumAz, sumEl } = path.path.reduce((acc, loc) => ({ sumAz: acc.sumAz + loc.azimuth, sumEl: acc.sumEl + loc.elevation }), { sumAz: 0, sumEl: 0 });
+    const avgAz = sumAz / path.path.length;
+    const avgEl = sumEl / path.path.length;
+    path.path = path.path.filter(loc => (Math.abs(loc.azimuth - avgAz) < 1) && (Math.abs(loc.elevation - avgEl) < 1))
+  });
 
-  return visiblePaths;
+  return visiblePaths.filter(path => path.path.length > 0);
 }
 
 function getHighestElevation(path) {

@@ -98,6 +98,12 @@
         const mRadius = map(deg, 0, 90, rad, 0);
         ellipse(0, 0, 2 * mRadius, 2 * mRadius);
       }
+
+      for (let deg = 0; deg < 360; deg += 15) {
+        line(rad-10, 0, rad+10, 0);
+        rotate(15);
+      }
+
       pop();
     }
 
@@ -125,12 +131,14 @@
 
       drawElevationRings(maxR);
 
+      console.log("SUN");
       const visibleSun = getVisiblePaths(2026, MONTH, LOCATION, ultimate.solarAzimuthElevation, SUN_OPT);
       visibleSun.forEach(p => {
         fill(0);
         drawPath(p, 8, maxR);
       });
 
+      console.log("MOON");
       const visibleMoon = getVisiblePaths(2026, MONTH, LOCATION, gpt.lunarAzimuthElevation, MOON_OPT);
       visibleMoon.forEach(p => {
         fill(0);
@@ -142,7 +150,7 @@
         console.log(s.name);
         const visibleGoes = getStationaryPaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
         visibleGoes.forEach(p => {
-          fill(220,20,20);
+          fill(220, 20, 20, 100);
           drawPath(p, 4, maxR);
         });
       });
@@ -157,7 +165,7 @@
       });
 
       // TODO: plot highest of the ones that come by the most
-      TLES.STARLINK.slice(0, 5).forEach(s => {
+      TLES.STARLINK.slice(0, 32).forEach(s => {
         SAT_OPT["tle"] = s.tle;
         console.log(s.name);
         const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
@@ -167,7 +175,7 @@
       });
 
       // TODO: plot highest of the ones that come by the most
-      TLES.KUIPER.slice(0, 5).forEach(s => {
+      TLES.KUIPER.slice(0, 32).forEach(s => {
         SAT_OPT["tle"] = s.tle;
         console.log(s.name);
         const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
@@ -179,6 +187,7 @@
       // space stations and special flights
       ["nauka", "hubble", "crew12", "soyuz"].forEach(sat => {
         SAT_OPT["tle"] = tles.sats[sat].tle;
+        console.log(tles.sats[sat].name);
         const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
         const highest = getHighestPath(visible);
         fill(120, 220, 120);
