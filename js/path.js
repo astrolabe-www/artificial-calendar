@@ -17,6 +17,11 @@ async function getTlesFromUrl(url) {
   return tles;
 }
 
+function dateToString(date) {
+  const isoDate = date.toISOString().split(".")[0];
+  return isoDate.replace("T", "\n");
+}
+
 function getVisiblePaths(year, month, location, toAzEl, options) {
   const paths = [];
 
@@ -48,10 +53,12 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
 
         if (pElevation < 0) {
           cPath = { path: [] };
-          cPath.start = new Date(localDate.year, localDate.month - 1, day, localTime.hour, localTime.minute, localTime.second, 0);
+          const startDate = new Date(localDate.year, localDate.month - 1, day, localTime.hour, localTime.minute, localTime.second, 0);
+          cPath.start = dateToString(startDate);
         }
         cPath.path.push({ azimuth, elevation });
-        cPath.end = new Date(localDate.year, localDate.month - 1, day, localTime.hour, localTime.minute, localTime.second, 0);
+        const endDate = new Date(localDate.year, localDate.month - 1, day, localTime.hour, localTime.minute, localTime.second, 0);
+        cPath.end = dateToString(endDate);
       } else {
         if (pElevation > 0) {
           paths.push(structuredClone(cPath));
@@ -107,7 +114,6 @@ function getMostVisited(sats) {
 function getMostVisitedHighestLowestPaths(tles, options) {
   const allSats = tles.map(s => {
     options["tle"] = s.tle;
-    console.log(s.name);
     return {
       name: s.name,
       paths: getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, options),
