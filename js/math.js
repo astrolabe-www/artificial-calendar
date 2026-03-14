@@ -119,7 +119,7 @@ const ultimate = {
     const azimuth_r = Math.atan2(Sx, Sy);
     const zenith_r = Math.acos(Sz);
 
-    const azimuth = rad2deg(azimuth_r);
+    const azimuth = (rad2deg(azimuth_r) + 360) % 360;
     const zenith = rad2deg(zenith_r);
     const elevation = 90.0 - zenith;
 
@@ -240,7 +240,7 @@ const gpt = {
     );
 
     return {
-      azimuth: az / rad + 180.0,
+      azimuth: (az / rad + 180.0 + 360) % 360,
       elevation: alt / rad
     };
   }
