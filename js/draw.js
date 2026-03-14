@@ -1,5 +1,6 @@
 function drawElevationRings(rad) {
   push();
+  noFill();
   stroke(0, 255);
   ellipse(0, 0, 2 * rad, 2 * rad);
 
@@ -78,13 +79,17 @@ function drawLabels(labels, rad) {
   const bl = labels.filter(({ loc }) => loc.azimuth > 180 && loc.azimuth < 270 ).toSorted((a,b) => a.loc.azimuth - b.loc.azimuth);
   const tl = labels.filter(({ loc }) => loc.azimuth > 270 ).toSorted((a,b) => b.loc.azimuth - a.loc.azimuth);
 
+  const ts = textSize();
+  const lh = ts + 3;
+  const ls = 8/3 * ts;
+
   push();
   textAlign(RIGHT, BOTTOM);
   tr.forEach(({ name, loc, date, color }, idx) => {
     const labelText = `${name}: ${date.replace("\n", " ")}`;
     const labelWidth = -textWidth(labelText) - 2;
-    const tx = width/2 - 2;
-    const ty = -height/2 + idx * 32 + 12 + 14;
+    const tx = width/2 - 4;
+    const ty = -height/2 + idx * ls + ts + lh;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
     color.setAlpha(255);
@@ -104,8 +109,8 @@ function drawLabels(labels, rad) {
   br.forEach(({ name, loc, date, color }, idx) => {
     const labelText = `${name}: ${date.replace("\n", " ")}`;
     const labelWidth = -textWidth(labelText) - 2;
-    const tx = width/2 - 2;
-    const ty = height/2 - idx * 32 - 12;
+    const tx = width/2 - 4;
+    const ty = height/2 - idx * ls - ts;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
     color.setAlpha(255);
@@ -125,8 +130,8 @@ function drawLabels(labels, rad) {
   bl.forEach(({ name, loc, date, color }, idx) => {
     const labelText = `${name}: ${date.replace("\n", " ")}`;
     const labelWidth = textWidth(labelText) + 2;
-    const tx = -(width/2 - 2);
-    const ty = height/2 - idx * 32 - 12;
+    const tx = -(width/2 - 4);
+    const ty = height/2 - idx * ls - ts;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
     color.setAlpha(255);
@@ -146,8 +151,61 @@ function drawLabels(labels, rad) {
   tl.forEach(({ name, loc, date, color }, idx) => {
     const labelText = `${name}: ${date.replace("\n", " ")}`;
     const labelWidth = textWidth(labelText) + 2;
-    const tx = -(width/2 - 2);
-    const ty = -height/2 + idx * 32 + 12 + 14;
+    const tx = -(width/2 - 4);
+    const ty = -height/2 + idx * ls + ts + lh;
+    const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
+
+    color.setAlpha(255);
+    fill(color);
+    noStroke();
+    text(labelText, tx, ty);
+
+    color.setAlpha(128);
+    stroke(color);
+    line(tx + 0.75*labelWidth, ty + 2, tx + labelWidth, ty + 2);
+    line(tx + labelWidth, ty + 2, x, y);
+  });
+  pop();
+}
+
+function drawCenterLabels(labels, rad) {
+  const cr = labels.filter(({ loc }) => loc.azimuth < 180).toSorted((a, b) => a.loc.azimuth - b.loc.azimuth);
+  const cl = labels.filter(({ loc }) => loc.azimuth >= 180).toSorted((a, b) => b.loc.azimuth - a.loc.azimuth);
+
+  const ts = textSize();
+  const lh = ts + 3;
+  const ls = 16/3 * ts;
+
+  push();
+  textAlign(RIGHT, BOTTOM);
+  cr.forEach(({ name, loc, date, color }, idx) => {
+    const midx = idx - cr.length / 2;
+    const labelText = `${name}\n${date}`;
+    const labelWidth = -textWidth(labelText) - 2;
+    const tx = width / 2 - 4;
+    const ty = midx * ls + ts + lh;
+    const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
+
+    color.setAlpha(255);
+    fill(color);
+    noStroke();
+    text(labelText, tx, ty);
+
+    color.setAlpha(128);
+    stroke(color);
+    line(tx + 0.75 * labelWidth, ty + 2, tx + labelWidth, ty + 2);
+    line(tx + labelWidth, ty + 2, x, y);
+  });
+  pop();
+
+  push();
+  textAlign(LEFT, BOTTOM);
+  cl.forEach(({ name, loc, date, color }, idx) => {
+    const midx = idx - cr.length / 2;
+    const labelText = `${name}\n${date}`;
+    const labelWidth = textWidth(labelText) + 2;
+    const tx = -(width/2 - 4);
+    const ty = midx * ls + ts + lh;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
     color.setAlpha(255);
