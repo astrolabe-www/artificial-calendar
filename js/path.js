@@ -35,7 +35,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
       const { azimuth, elevation } = toAzEl(localDate, localTime, location, tle);
       if (elevation >= 0) {
         if (secondStep > secondStep0) {
-          daySecond -= secondStep;
+          daySecond = max(daySecond - secondStep, 0);
           secondStep = secondStep0;
           continue;
         }
@@ -48,6 +48,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
         cPath.end = dateToString(localDate, localTime);
       } else {
         if (pElevation > 0) {
+          cPath.path.push({ azimuth, elevation:0 });
           paths.push(structuredClone(cPath));
           cPath = null;
           secondStep *= 15;
@@ -72,7 +73,7 @@ function getStationaryPath(year, month, location, toAzEl, options) {
     const { sumAz, sumEl } = path.path.reduce((acc, loc) => ({ sumAz: acc.sumAz + loc.azimuth, sumEl: acc.sumEl + loc.elevation }), { sumAz: 0, sumEl: 0 });
     const avgAz = sumAz / path.path.length;
     const avgEl = sumEl / path.path.length;
-    path.path = path.path.filter(loc => (Math.abs(loc.azimuth - avgAz) < 1) && (Math.abs(loc.elevation - avgEl) < 1))
+    path.path = path.path.filter(loc => (Math.abs(loc.azimuth - avgAz) < 1) && (Math.abs(loc.elevation - avgEl) < 1) && loc.elevation > 10);
   });
 
   const validPaths = visiblePaths.filter(path => path.path.length > 0);

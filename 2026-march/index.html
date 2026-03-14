@@ -80,18 +80,21 @@
       angleMode(DEGREES);
       Object.assign(TLES, await fetchTles());
       textFont("monospace");
-      textSize(10);
+      textSize(12);
 
       colors["BGND"] = color(255);
-      colors["SUN"] = color(249, 214, 95);
-      colors["MOON"] = color(170, 173, 245)
-      colors["STA"] = color(236, 86, 73);
-      colors["SAT"] = color(183, 219, 163);
+      colors["SUN"] = color(247, 173, 39);
+      colors["MOON"] = color(156, 182, 224)
+      colors["STA"] = color(229, 51, 48);
+      colors["SAT0"] = color(68, 164, 52);
+      colors["SAT1"] = color(245, 187, 208);
+      colors["SAT2"] = color(133, 98, 50);
     }
 
     function draw() {
       push();
       translate(width/2, height/2);
+      scale(0.85);
       const maxR = min(width/2, height/2);
       const dotDim = 2;
 
@@ -102,8 +105,10 @@
 
       if (frameCount == 2) {
         const visibleSun = getVisiblePaths(2026, MONTH, LOCATION, ultimate.solarAzimuthElevation, SUN_OPT);
-        visibleSun.forEach(p => {
+        visibleSun.forEach((p, idx) => {
           drawPath(p, 8, colors["SUN"], maxR);
+          if (idx % 2 != 0) return;
+
           cLabels.push({
             name: "SUN",
             loc: p.path[0],
@@ -157,58 +162,58 @@
 
       if (frameCount == 4) {
         const noaaMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.noaa, SAT_OPT);
-        drawPath(noaaMostVisited.highestPath, dotDim, colors["SAT"], maxR);
+        drawPath(noaaMostVisited.highestPath, dotDim, colors["SAT0"], maxR);
         labels.push({
           name: noaaMostVisited.name,
           loc: noaaMostVisited.highestPath.path[0],
           date: noaaMostVisited.highestPath.start,
-          color: colors["SAT"],
+          color: colors["SAT0"],
         });
       }
 
       if (frameCount == 5) {
         const starlinkMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.starlink.slice(0, 32), SAT_OPT);
-        drawPath(starlinkMostVisited.highestPath, dotDim, colors["SAT"], maxR);
+        drawPath(starlinkMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
         labels.push({
           name: starlinkMostVisited.name,
           loc: starlinkMostVisited.highestPath.path[0],
           date: starlinkMostVisited.highestPath.start,
-          color: colors["SAT"],
+          color: colors["SAT1"],
         });
       }
 
       if (frameCount == 6) {
         const kuiperMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.kuiper.slice(0, 32), SAT_OPT);
-        drawPath(kuiperMostVisited.highestPath, dotDim, colors["SAT"], maxR);
+        drawPath(kuiperMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
         labels.push({
           name: kuiperMostVisited.name,
           loc: kuiperMostVisited.highestPath.path[0],
           date: kuiperMostVisited.highestPath.start,
-          color: colors["SAT"],
+          color: colors["SAT1"],
         });
       }
 
       if (frameCount == 7) {
         const sssTles = TLES.sss.filter(s => SSS.includes(s.name));
         const sssMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, sssTles, SAT_OPT);
-        drawPath(sssMostVisited.highestPath, dotDim, colors["SAT"], maxR);
+        drawPath(sssMostVisited.highestPath, dotDim, colors["SAT2"], maxR);
         labels.push({
           name: sssMostVisited.name,
           loc: sssMostVisited.highestPath.path[0],
           date: sssMostVisited.highestPath.start,
-          color: colors["SAT"],
+          color: colors["SAT2"],
         });
       }
 
       if (frameCount == 8) {
         const sciTles = TLES.sci.filter(s => SCI.includes(s.name));
         const sciMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, sciTles, SAT_OPT);
-        drawPath(sciMostVisited.highestPath, dotDim, colors["SAT"], maxR);
+        drawPath(sciMostVisited.highestPath, dotDim, colors["SAT2"], maxR);
         labels.push({
           name: sciMostVisited.name,
           loc: sciMostVisited.highestPath.path[0],
           date: sciMostVisited.highestPath.start,
-          color: colors["SAT"],
+          color: colors["SAT2"],
         });
 
         drawLabels(labels, maxR);

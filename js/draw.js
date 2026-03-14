@@ -4,17 +4,52 @@ function drawElevationRings(rad) {
   stroke(0, 255);
   ellipse(0, 0, 2 * rad, 2 * rad);
 
-  stroke(0, 32);
   for (let deg = 15; deg < 90; deg += 15) {
+    stroke(0, 32);
+    noFill();
     // const mRadius = rad * Math.cos(deg/180 * Math.PI);
     const mRadius = map(deg, 0, 90, rad, 0);
     ellipse(0, 0, 2 * mRadius, 2 * mRadius);
+
+    noStroke();
+    fill(0, 32);
+    textSize(14);
+    textAlign(CENTER, BOTTOM);
+    text(`${deg}°`, 0, -mRadius);
   }
 
   for (let deg = 0; deg < 360; deg += 15) {
-    line(10, 0, rad+10, 0);
+    stroke(0, 32);
+    line(10, 0, rad + 10, 0);
+    if (deg % 90 != 0) {
+      push();
+      translate(rad + 20, 0);
+      rotate(-deg);
+      noStroke();
+      fill(0, 32);
+      textSize(14);
+      textAlign(CENTER, CENTER);
+      text(`${(deg+90)%360}°`, 0, 0);
+      pop();
+    }
     rotate(15);
   }
+
+  noStroke();
+  fill(0, 32);
+  textSize(32);
+
+  textAlign(CENTER, BOTTOM);
+  text("N", 0, -rad - 20);
+
+  textAlign(LEFT, CENTER);
+  text("E", rad + 20, 0);
+
+  textAlign(CENTER, TOP);
+  text("S", 0, rad + 20);
+
+  textAlign(RIGHT, CENTER);
+  text("W", -rad - 20, 0);
 
   pop();
 }
