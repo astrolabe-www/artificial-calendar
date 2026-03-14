@@ -21,7 +21,7 @@ async function fetchTles() {
   const satGroups = ["goes", "noaa", "starlink", "kuiper", "sss", "sci"];
 
   // { k: f"../data/etc/{k}.txt" for k in satGroups }
-  const URLS = satGroups.reduce((acc, k) => ({ ...acc, [k]: `../data/tles/${k}.txt` }), {});
+  const URLS = satGroups.reduce((acc, k) => ({ ...acc, [k]: `data/tles/${k}.txt` }), {});
 
   const ps = satGroups.map(k => getTlesFromUrl(URLS[k]));
   const data = await Promise.all(ps);
