@@ -91,12 +91,19 @@ function getStationaryPath(year, month, location, toAzEl, options) {
 
   if (validPaths.length < 1) {
     return {};
-  } else if (validPaths.length < 2) {
-    return validPaths[0];
-  } else {
-    const combinedPaths = validPaths.reduce((acc, path) => ({ path: acc.path.concat(path.path), start: acc.start, end: acc.end }));
-    return combinedPaths;
   }
+  const combinedPaths = validPaths.reduce((acc, path) => ({ path: acc.path.concat(path.path), start: acc.start, end: path.end }));
+
+  if (combinedPaths.path.length < 2) {
+    const { azimuth, elevation } = combinedPaths.path[0];
+    combinedPaths.path.push({ azimuth: azimuth + 1, elevation: elevation + 1 });
+    combinedPaths.path.push({ azimuth: azimuth + 1, elevation: elevation - 1 });
+    combinedPaths.path.push({ azimuth: azimuth - 1, elevation: elevation + 1 });
+    combinedPaths.path.push({ azimuth: azimuth - 1, elevation: elevation - 1 });
+  }
+  combinedPaths.path = combinedPaths.path.slice(0, 80);
+
+  return combinedPaths;
 }
 
 function getHighestElevation(path) {
