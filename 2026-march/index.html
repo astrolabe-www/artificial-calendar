@@ -57,7 +57,7 @@
     const SAT_OPT = {
       numDays: NDAYS,
       dayStep: 1,
-      secondStep: 4*10,
+      secondStep: 15,
     };
 
     const STA_OPT = {
@@ -215,7 +215,9 @@
           date: sciMostVisited.highestPath.start,
           color: colors["SAT2"],
         });
+      }
 
+      if (frameCount == 9) {
         drawLabels(labels, maxR);
         drawNames(names, maxR);
         drawCenterLabels(cLabels, maxR);

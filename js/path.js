@@ -11,6 +11,11 @@ function dateToString(localDate, localTime) {
   return `${dateStr}\n${timeStr}`;
 }
 
+function localToEpochMillis(localDate, localTime) {
+  const date = new Date(localDate.year, localDate.month - 1, localDate.day, localTime.hour, localTime.minute, localTime.second);
+  return date.getTime();
+}
+
 function getVisiblePaths(year, month, location, toAzEl, options) {
   const paths = [];
 
@@ -22,6 +27,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
 
   let cPath = null;
   let pElevation = -1;
+  let startMillis = 0;
 
   for (let day = 1; day <= numDays; day += dayStep) {
     localDate.day = day;
@@ -35,7 +41,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
       const { azimuth, elevation } = toAzEl(localDate, localTime, location, tle);
       if (elevation >= 0) {
         if (secondStep > secondStep0) {
-          daySecond = max(daySecond - secondStep, 0);
+          daySecond = max(daySecond - secondStep - secondStep0, 0);
           secondStep = secondStep0;
           continue;
         }
@@ -43,15 +49,20 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
         if (pElevation < 0) {
           cPath = { path: [] };
           cPath.start = dateToString(localDate, localTime);
+          startMillis = localToEpochMillis(localDate, localTime);
         }
-        cPath.path.push({ azimuth, elevation: pElevation < 0 && elevation < 5 ? 0 : elevation });
+        cPath.path.push({ azimuth, elevation: pElevation < 0 && elevation < 2 ? 0 : elevation });
         cPath.end = dateToString(localDate, localTime);
       } else {
         if (pElevation > 0) {
-          cPath.path.push({ azimuth, elevation: 0 });
-          paths.push(structuredClone(cPath));
+          // passes should be > 4 minutes
+          const endMillis = localToEpochMillis(localDate, localTime);
+          if (endMillis - startMillis > (4 * 60)) {
+            cPath.path.push({ azimuth, elevation: 0 });
+            paths.push(structuredClone(cPath));
+          }
           cPath = null;
-          secondStep *= 15;
+          secondStep = 15 * secondStep0;
         }
       }
       pElevation = elevation;
@@ -103,12 +114,7 @@ function getHighestLowestPaths(paths) {
   return [highest, lowest];
 }
 
-function getMostVisited(sats) {
-  const byPathCount = sats.toSorted((a, b) => b.paths.length - a.paths.length);
-  return byPathCount[0];
-}
-
-function getMostVisitedHighestLowestPaths(year, month, location, tles, options) {
+function getMostVisited(year, month, location, tles, options) {
   const allSats = tles.map(s => {
     options["tle"] = s.tle;
     return {
@@ -117,7 +123,12 @@ function getMostVisitedHighestLowestPaths(year, month, location, tles, options) 
     };
   });
 
-  const mostVisited = getMostVisited(allSats);
+  const byPathCount = allSats.toSorted((a, b) => b.paths.length - a.paths.length);
+  return byPathCount[0];
+}
+
+function getMostVisitedHighestLowestPaths(year, month, location, tles, options) {
+  const mostVisited = getMostVisited(year, month, location, tles, options);
   const [mostVisitedHighest, mostVisitedLowest] = getHighestLowestPaths(mostVisited.paths);
 
   return { name: mostVisited.name, highestPath: mostVisitedHighest, lowestPath: mostVisitedLowest };
