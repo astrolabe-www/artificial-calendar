@@ -44,11 +44,11 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
           cPath = { path: [] };
           cPath.start = dateToString(localDate, localTime);
         }
-        cPath.path.push({ azimuth, elevation });
+        cPath.path.push({ azimuth, elevation: pElevation < 0 && elevation < 5 ? 0 : elevation });
         cPath.end = dateToString(localDate, localTime);
       } else {
         if (pElevation > 0) {
-          cPath.path.push({ azimuth, elevation:0 });
+          cPath.path.push({ azimuth, elevation: 0 });
           paths.push(structuredClone(cPath));
           cPath = null;
           secondStep *= 15;

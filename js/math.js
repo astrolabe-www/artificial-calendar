@@ -273,6 +273,13 @@ const satjs = {
     // Propagate satellite using js date
     const positionAndVelocity = satellite.propagate(satrec, dtUtc);
 
+    if (!positionAndVelocity) {
+      return {
+        azimuth: 0,
+        elevation: 0,
+      };
+    }
+
     // The positionAndVelocity result is a pair of ECI coordinates.
     const positionEci = positionAndVelocity.position;
 
@@ -282,7 +289,7 @@ const satjs = {
 
     return {
       azimuth: rad2deg(lookAngles.azimuth),
-      elevation: rad2deg(lookAngles.elevation)
+      elevation: rad2deg(lookAngles.elevation),
     };
   }
 }
