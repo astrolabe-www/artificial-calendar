@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta charset="utf-8" />
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.0.0/p5.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/satellite.js@6.0.2/dist/satellite.min.js"></script>
+
+    <script src="../js/draw.js"></script>
     <script src="../js/math.js"></script>
     <script src="../js/path.js"></script>
-    <meta charset="utf-8" />
+    <script src="../js/tle.js"></script>
+
     <style>
       html,
       body {
@@ -35,9 +40,7 @@
 
     const LOCATION = NYC;
     const MONTH = 3;
-    const NDAYS = 21;
-
-    const DATADATE = "20260313";
+    const NDAYS = 13;
 
     const SUN_OPT = {
       numDays: NDAYS,
@@ -65,81 +68,16 @@
 
     const TLES = {};
     const SSS = ["ISS (NAUKA)", "CREW DRAGON 12", "SOYUZ-MS 28", "CSS (TIANHE)"];
-    const SCI = ["FGRST (GLAST)", "HST", "TERRA", "CXO", "POLAR"];
+    // const SCI = ["FGRST (GLAST)", "HST", "TERRA", "CXO", "POLAR"];
+    const SCI = ["FGRST (GLAST)", "HST"];
 
-    async function fetchTles() {
-      const satGroups = ["goes", "noaa", "starlink", "kuiper", "sss", "sci"];
-
-      // { k: f"../data/etc/{k}.txt" for k in satGroups }
-      const URLS = satGroups.reduce((acc, k) => ({ ...acc, [k]: `../data/tles/${k}.txt` }), {});
-
-      const ps = satGroups.map(k => getTlesFromUrl(URLS[k]));
-      const data = await Promise.all(ps);
-
-      return satGroups.reduce((acc, k, idx) => ({ ...acc, [k]: data[idx] }), {});
-    }
+    const labels = [];
+    const names = [];
 
     async function setup() {
       createCanvas(windowWidth, windowHeight);
       angleMode(DEGREES);
       Object.assign(TLES, await fetchTles());
-    }
-
-    function drawElevationRings(rad) {
-      push();
-      stroke(0, 255);
-      ellipse(0, 0, 2 * rad, 2 * rad);
-
-      stroke(0, 32);
-      for (let deg = 15; deg < 90; deg += 15) {
-        // const mRadius = rad * Math.cos(deg/180 * Math.PI);
-        const mRadius = map(deg, 0, 90, rad, 0);
-        ellipse(0, 0, 2 * mRadius, 2 * mRadius);
-      }
-
-      for (let deg = 0; deg < 360; deg += 15) {
-        line(10, 0, rad+10, 0);
-        rotate(15);
-      }
-
-      pop();
-    }
-
-    function azel2xy(az, el, rad) {
-      // const r = rad * Math.cos(el / 180 * Math.PI);
-      const r = map(el, 0, 90, rad, 0);
-      const theta = az - 90;
-      const x = r * cos(theta);
-      const y = r * sin(theta);
-      return { x, y };
-    };
-
-    function drawPath(path, diam, c, rad) {
-      push();
-      noFill();
-      stroke(c);
-      strokeWeight(diam);
-      beginShape();
-      path.path.forEach(({ azimuth, elevation }) => {
-        const { x, y } = azel2xy(azimuth, elevation, rad);
-        vertex(x, y);
-      });
-      endShape();
-      pop();
-    }
-
-    function drawName(path, name, c, rad) {
-      const { azimuth, elevation } = path.path[0];
-      const { x, y } = azel2xy(azimuth, elevation, rad);
-      push();
-      if (x > 0) {
-        textAlign(LEFT, TOP);
-        text(name+"\n"+path.start, x+10, y);
-      } else {
-        textAlign(RIGHT, TOP);
-        text(name+"\n"+path.start, x-10, y);
-      }
-      pop();
     }
 
     function draw() {
@@ -153,7 +91,7 @@
         drawElevationRings(maxR);
       }
 
-      if (frameCount == 2) {
+      if (frameCount == 20) {
         console.log("SUN");
         const visibleSun = getVisiblePaths(2026, MONTH, LOCATION, ultimate.solarAzimuthElevation, SUN_OPT);
         visibleSun.forEach(p => {
@@ -168,49 +106,90 @@
       }
 
       if (frameCount == 3) {
+        const goesColor = color(220, 20, 20);
         TLES.goes.forEach(s => {
           STA_OPT["tle"] = s.tle;
-          const visibleGoes = getStationaryPaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
-          visibleGoes.forEach(p => {
-            drawPath(p, dotDim, color(220, 20, 20), maxR);
+          const visibleGoes = getStationaryPath(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
+
+          if (Object.keys(visibleGoes).length < 1) return;
+
+          drawPath(visibleGoes, dotDim, goesColor, maxR);
+          names.push({
+            name: s.name,
+            loc: visibleGoes.path[0],
+            date: visibleGoes.start,
+            color: color(220, 20, 20),
           });
         });
       }
 
-      if (frameCount == 4) {
-        const noaaMostVisited = getMostVisitedHighestLowestPaths(TLES.noaa, SAT_OPT);
-        drawName(noaaMostVisited.highestPath, noaaMostVisited.name, color(18, 18, 220), maxR);
-        drawPath(noaaMostVisited.highestPath, dotDim, color(18, 18, 220), maxR);
+      if (frameCount == 40) {
+        const noaaColor = color(18, 18, 220);
+        const noaaMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.noaa, SAT_OPT);
+        drawPath(noaaMostVisited.highestPath, dotDim, noaaColor, maxR);
+        labels.push({
+          name: noaaMostVisited.name,
+          loc: noaaMostVisited.highestPath.path[0],
+          date: noaaMostVisited.highestPath.start,
+          color: noaaColor,
+        });
       }
 
-      if (frameCount == 5) {
-        const starlinkMostVisited = getMostVisitedHighestLowestPaths(TLES.starlink.slice(0, 32), SAT_OPT);
-        drawName(starlinkMostVisited.highestPath, starlinkMostVisited.name, color(18, 18, 220), maxR);
-        drawPath(starlinkMostVisited.highestPath, dotDim, color(200, 18, 22), maxR);
+      if (frameCount == 50) {
+        const starlinkColor = color(200, 18, 22);
+        const starlinkMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.starlink.slice(0, 32), SAT_OPT);
+        drawPath(starlinkMostVisited.highestPath, dotDim, starlinkColor, maxR);
+        labels.push({
+          name: starlinkMostVisited.name,
+          loc: starlinkMostVisited.highestPath.path[0],
+          date: starlinkMostVisited.highestPath.start,
+          color: starlinkColor,
+        });
       }
 
-      if (frameCount == 6) {
-        const kuiperMostVisited = getMostVisitedHighestLowestPaths(TLES.kuiper.slice(0, 32), SAT_OPT);
-        drawName(kuiperMostVisited.highestPath, kuiperMostVisited.name, color(18, 18, 220), maxR);
-        drawPath(kuiperMostVisited.highestPath, dotDim, color(20, 180, 22), maxR);
+      if (frameCount == 60) {
+        const kuiperColor = color(20, 180, 22);
+        const kuiperMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.kuiper.slice(0, 32), SAT_OPT);
+        drawPath(kuiperMostVisited.highestPath, dotDim, kuiperColor, maxR);
+        labels.push({
+          name: kuiperMostVisited.name,
+          loc: kuiperMostVisited.highestPath.path[0],
+          date: kuiperMostVisited.highestPath.start,
+          color: kuiperColor,
+        });
       }
 
       if (frameCount == 7) {
+        const sssColor = color(220, 10, 220);
         const sssTles = TLES.sss.filter(s => SSS.includes(s.name));
-        const sssMostVisited = getMostVisitedHighestLowestPaths(sssTles, SAT_OPT);
-        drawName(sssMostVisited.highestPath, sssMostVisited.name, color(18, 18, 220), maxR);
-        drawPath(sssMostVisited.highestPath, dotDim, color(220, 10, 220), maxR);
+        const sssMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, sssTles, SAT_OPT);
+        drawPath(sssMostVisited.highestPath, dotDim, sssColor, maxR);
+        labels.push({
+          name: sssMostVisited.name,
+          loc: sssMostVisited.highestPath.path[0],
+          date: sssMostVisited.highestPath.start,
+          color: sssColor,
+        });
       }
 
       if (frameCount == 8) {
+        const sciColor = color(180, 180, 220);
         SCI.forEach(name => {
           const s = TLES.sci.filter(s => s.name == name)[0];
           SAT_OPT["tle"] = s.tle;
           const visible = getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, SAT_OPT);
           const [highest, lowest] = getHighestLowestPaths(visible);
-          drawName(highest, s.name, color(18, 18, 220), maxR);
-          drawPath(highest, dotDim, color(180, 180, 220), maxR);
+          drawPath(highest, dotDim, sciColor, maxR);
+          labels.push({
+            name: s.name,
+            loc: highest.path[0],
+            date: highest.start,
+            color: sciColor,
+          });
         });
+
+        drawLabels(labels, maxR);
+        drawNames(names, maxR);
         noLoop();
       }
 

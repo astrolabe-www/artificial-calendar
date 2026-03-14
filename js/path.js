@@ -1,22 +1,3 @@
-async function getTlesFromUrl(url) {
-  const tleRes = await fetch(url);
-  const tleTxt = await tleRes.text();
-  const tleLines = tleTxt.split("\n");
-
-  const tles = [];
-
-  for (let ln = 0; ln < tleLines.length - 2; ln += 3) {
-    tles.push({
-      name: tleLines[ln + 0].trim(),
-      tle: [
-        tleLines[ln + 1].trim(),
-        tleLines[ln + 2].trim(),
-      ]
-    });
-  }
-  return tles;
-}
-
 function dateToString(date) {
   const isoDate = date.toISOString().split(".")[0];
   return isoDate.replace("T", "\n");
@@ -78,7 +59,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
   return paths;
 }
 
-function getStationaryPaths(year, month, location, toAzEl, options) {
+function getStationaryPath(year, month, location, toAzEl, options) {
   const visiblePaths = getVisiblePaths(year, month, location, toAzEl, options);
 
   visiblePaths.forEach(path => {
@@ -88,7 +69,16 @@ function getStationaryPaths(year, month, location, toAzEl, options) {
     path.path = path.path.filter(loc => (Math.abs(loc.azimuth - avgAz) < 1) && (Math.abs(loc.elevation - avgEl) < 1))
   });
 
-  return visiblePaths.filter(path => path.path.length > 0);
+  const validPaths = visiblePaths.filter(path => path.path.length > 0);
+
+  if (validPaths.length < 1) {
+    return {};
+  } else if (validPaths.length < 2) {
+    return validPaths[0];
+  } else {
+    const combinedPaths = validPaths.reduce((acc, path) => ({ path: acc.path.concat(path.path), start: acc.start, end: acc.end }));
+    return combinedPaths;
+  }
 }
 
 function getHighestElevation(path) {
@@ -111,12 +101,12 @@ function getMostVisited(sats) {
   return byPathCount[0];
 }
 
-function getMostVisitedHighestLowestPaths(tles, options) {
+function getMostVisitedHighestLowestPaths(year, month, location, tles, options) {
   const allSats = tles.map(s => {
     options["tle"] = s.tle;
     return {
       name: s.name,
-      paths: getVisiblePaths(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, options),
+      paths: getVisiblePaths(year, month, location, satjs.satelliteAzimuthElevation, options),
     };
   });
 
