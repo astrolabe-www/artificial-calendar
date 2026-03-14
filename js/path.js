@@ -1,6 +1,14 @@
-function dateToString(date) {
-  const isoDate = date.toISOString().split(".")[0];
-  return isoDate.replace("T", "\n");
+function pad2(num, pad="0") {
+  return String(num).padStart(2, pad);
+}
+
+function dateToString(localDate, localTime) {
+  const { year, month, day } = localDate;
+  const { hour, minute, second } = localTime;
+
+  const dateStr = `${year}-${pad2(month)}-${pad2(day)}`;
+  const timeStr = `${pad2(hour)}:${pad2(minute)}:${pad2(second)}`;
+  return `${dateStr}\n${timeStr}`;
 }
 
 function getVisiblePaths(year, month, location, toAzEl, options) {
@@ -34,12 +42,10 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
 
         if (pElevation < 0) {
           cPath = { path: [] };
-          const startDate = new Date(localDate.year, localDate.month - 1, day, localTime.hour, localTime.minute, localTime.second, 0);
-          cPath.start = dateToString(startDate);
+          cPath.start = dateToString(localDate, localTime);
         }
         cPath.path.push({ azimuth, elevation });
-        const endDate = new Date(localDate.year, localDate.month - 1, day, localTime.hour, localTime.minute, localTime.second, 0);
-        cPath.end = dateToString(endDate);
+        cPath.end = dateToString(localDate, localTime);
       } else {
         if (pElevation > 0) {
           paths.push(structuredClone(cPath));

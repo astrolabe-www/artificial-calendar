@@ -17,7 +17,7 @@ const hygor = {
     const { lat:latDeg, lon:lonDeg, tz:tzOffsetHours } = location;
 
     const utcHour = hour - tzOffsetHours;
-    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second));
     const jd = satellite.jday(dtUtc);
     const T = (jd - 2451545.0) / 36525.0;
 
@@ -92,7 +92,7 @@ const ultimate = {
     const lat_r = deg2rad(latDeg);
     const lon_r = deg2rad(lonDeg);
 
-    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second));
     const jd = satellite.jday(dtUtc);
     const days = jd - 2451545.0;
 
@@ -143,7 +143,7 @@ const omni = {
     const utcHour = hour - tzOffsetHours;
     const hourFrac = utcHour + minute / 60.0 + second / 3600.0;
 
-    const dt = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
+    const dt = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second));
     const d = dayOfYear(dt);
 
     const dec = -23.45 * cosDeg((360.0 / 365.0) * (d + 10.0));
@@ -172,7 +172,7 @@ const gpt = {
 
     const utcHour = hour - tzOffsetHours;
 
-    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second));
     const jd = satellite.jday(dtUtc);
     const days = jd - 2451545.0;
 
@@ -262,7 +262,7 @@ const satjs = {
 
     // local date time
     const utcHour = hour - tzOffsetHours;
-    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second, 0));
+    const dtUtc = new Date(Date.UTC(year, month - 1, day, utcHour, minute, second));
 
     // GMST for some of the coordinate transforms
     const gmst = satellite.gstime(dtUtc);
