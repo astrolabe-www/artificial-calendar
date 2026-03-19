@@ -77,24 +77,10 @@ function drawPath(path, diam, c, rad) {
   pop();
 }
 
-function drawName(path, name, c, rad) {
-  const { azimuth, elevation } = path.path[0];
-  const { x, y } = azel2xy(azimuth, elevation, rad);
-  push();
-  if (x > 0) {
-    textAlign(LEFT, TOP);
-    text(name+"\n"+path.start, x+10, y);
-  } else {
-    textAlign(RIGHT, TOP);
-    text(name+"\n"+path.start, x-10, y);
-  }
-  pop();
-}
-
 function drawNames(names, rad) {
   push();
 
-  names.forEach(({ name, loc, date, color }, idx) => {
+  names.forEach(({ name, loc, color }, idx) => {
     fill(color);
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
     if (idx % 3 == 1) {

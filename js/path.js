@@ -111,6 +111,8 @@ function getHighestElevation(path) {
 }
 
 function getHighestLowestPaths(paths) {
+  if (paths.length < 2) return [[], []];
+
   paths.forEach(p => {
     p.high = getHighestElevation(p.path);
   });
