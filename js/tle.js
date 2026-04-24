@@ -18,7 +18,7 @@ async function getTlesFromUrl(url) {
 }
 
 async function fetchTles(root="") {
-  const satGroups = ["goes", "noaa", "starlink", "kuiper", "sss", "sci"];
+  const satGroups = ["goes", "noaa", "starlink", "kuiper", "sss", "sci", "gps", "glonass", "galileo", "beidou"];
 
   // { k: f"../data/etc/{k}.txt" for k in satGroups }
   const URLS = satGroups.reduce((acc, k) => ({ ...acc, [k]: `${root}data/tles/${k}.txt` }), {});
