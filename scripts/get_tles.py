@@ -8,6 +8,10 @@ URLS = {
   "KUIPER": "https://celestrak.org/NORAD/elements/gp.php?GROUP=kuiper&FORMAT=tle",
   "SSS": "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle",
   "SCI": "https://celestrak.org/NORAD/elements/gp.php?GROUP=science&FORMAT=tle",
+  "GPS": "https://celestrak.org/NORAD/elements/gp.php?GROUP=gps-ops&FORMAT=tle",
+  "GLONASS": "https://celestrak.org/NORAD/elements/gp.php?GROUP=glo-ops&FORMAT=tle",
+  "Galileo": "https://celestrak.org/NORAD/elements/gp.php?GROUP=galileo&FORMAT=tle",
+  "Beidou": "https://celestrak.org/NORAD/elements/gp.php?GROUP=beidou&FORMAT=tle",
 }
 
 out_dir = f"./data/tles/"
