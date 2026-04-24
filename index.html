@@ -69,6 +69,7 @@
     const TLES = {};
     const SSS = ["ISS (NAUKA)", "CREW DRAGON 12", "SOYUZ-MS 28", "CSS (TIANHE)"];
     const SCI = ["FGRST (GLAST)", "HST", "TERRA", "CXO", "POLAR"];
+    const NOAA = ["NOAA 2 (ITOS-D)", "NOAA 9", "NOAA 15", "NOAA 18", "NOAA 19", "NOAA 20 (JPSS-1)"];
 
     const colors = {};
     const labels = [];
@@ -161,7 +162,8 @@
       }
 
       if (frameCount == 4) {
-        const noaaMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.noaa, SAT_OPT);
+        const noaaTles = TLES.noaa.filter(s => NOAA.includes(s.name));
+        const noaaMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, noaaTles, SAT_OPT);
         drawPath(noaaMostVisited.highestPath, dotDim, colors["SAT0"], maxR);
         labels.push({
           name: noaaMostVisited.name,

@@ -3,7 +3,7 @@ from os import makedirs
 
 URLS = {
   "GOES": "https://celestrak.org/NORAD/elements/gp.php?GROUP=goes&FORMAT=tle",
-  "NOAA": "https://celestrak.org/NORAD/elements/gp.php?GROUP=noaa&FORMAT=tle",
+  "NOAA": "https://celestrak.org/NORAD/elements/gp.php?GROUP=satnogs&FORMAT=tle",
   "STARLINK": "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle",
   "KUIPER": "https://celestrak.org/NORAD/elements/gp.php?GROUP=kuiper&FORMAT=tle",
   "SSS": "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle",
