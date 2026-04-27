@@ -113,7 +113,6 @@ function drawLabels(labels, rad) {
     const ty = -height/2 + idx * ls + ts + lh;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
-    color.setAlpha(255);
     fill(color);
     noStroke();
     text(labelText, tx, ty);
@@ -122,6 +121,7 @@ function drawLabels(labels, rad) {
     stroke(color);
     line(tx + 0.75*labelWidth, ty + 2, tx + labelWidth, ty + 2);
     line(tx + labelWidth, ty + 2, x, y);
+    color.setAlpha(255);
   });
   pop();
 
@@ -134,7 +134,6 @@ function drawLabels(labels, rad) {
     const ty = height/2 - idx * ls - ts;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
-    color.setAlpha(255);
     fill(color);
     noStroke();
     text(labelText, tx, ty);
@@ -143,6 +142,7 @@ function drawLabels(labels, rad) {
     stroke(color);
     line(tx + 0.75*labelWidth, ty + 2, tx + labelWidth, ty + 2);
     line(tx + labelWidth, ty + 2, x, y);
+    color.setAlpha(255);
   });
   pop();
 
@@ -155,7 +155,6 @@ function drawLabels(labels, rad) {
     const ty = height/2 - idx * ls - ts;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
-    color.setAlpha(255);
     fill(color);
     noStroke();
     text(labelText, tx, ty);
@@ -164,6 +163,7 @@ function drawLabels(labels, rad) {
     stroke(color);
     line(tx + 0.75*labelWidth, ty + 2, tx + labelWidth, ty + 2);
     line(tx + labelWidth, ty + 2, x, y);
+    color.setAlpha(255);
   });
   pop();
 
@@ -176,7 +176,6 @@ function drawLabels(labels, rad) {
     const ty = -height/2 + idx * ls + ts + lh;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
-    color.setAlpha(255);
     fill(color);
     noStroke();
     text(labelText, tx, ty);
@@ -185,6 +184,7 @@ function drawLabels(labels, rad) {
     stroke(color);
     line(tx + 0.75*labelWidth, ty + 2, tx + labelWidth, ty + 2);
     line(tx + labelWidth, ty + 2, x, y);
+    color.setAlpha(255);
   });
   pop();
 }
@@ -207,7 +207,6 @@ function drawCenterLabels(labels, rad) {
     const ty = midx * ls + ts + lh;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
-    color.setAlpha(255);
     fill(color);
     noStroke();
     text(labelText, tx, ty);
@@ -216,6 +215,7 @@ function drawCenterLabels(labels, rad) {
     stroke(color);
     line(tx + 0.75 * labelWidth, ty + 2, tx + labelWidth, ty + 2);
     line(tx + labelWidth, ty + 2, x, y);
+    color.setAlpha(255);
   });
   pop();
 
@@ -229,7 +229,6 @@ function drawCenterLabels(labels, rad) {
     const ty = midx * ls + ts + lh;
     const { x, y } = azel2xy(loc.azimuth, loc.elevation, rad);
 
-    color.setAlpha(255);
     fill(color);
     noStroke();
     text(labelText, tx, ty);
@@ -238,6 +237,7 @@ function drawCenterLabels(labels, rad) {
     stroke(color);
     line(tx + 0.75*labelWidth, ty + 2, tx + labelWidth, ty + 2);
     line(tx + labelWidth, ty + 2, x, y);
+    color.setAlpha(255);
   });
   pop();
 }
