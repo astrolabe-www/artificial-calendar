@@ -1,5 +1,7 @@
+import json
 import urllib.request
 from os import makedirs
+
 
 URLS = {
   "GOES": "https://celestrak.org/NORAD/elements/gp.php?GROUP=goes&FORMAT=tle",
@@ -14,12 +16,42 @@ URLS = {
   "Beidou": "https://celestrak.org/NORAD/elements/gp.php?GROUP=beidou&FORMAT=tle",
 }
 
-out_dir = f"./data/tles/"
-makedirs(out_dir, exist_ok=True)
 
-for k,url in URLS.items():
-  out_path = f"{out_dir}/{k.lower()}.txt"
-  try:
-    urllib.request.urlretrieve(url, out_path)
-  except Exception as e:
-    print(f"An error occurred: {e}")
+def get_tles_from_file(file):
+  ifp = open(file, "r")
+  tleLines = ifp.readlines()
+  ifp.close()
+
+  tles = []
+
+  for idx in range(0, len(tleLines) - 2, 3):
+    tles.append({
+      "name": tleLines[idx + 0].strip(),
+      "tle": [
+        tleLines[idx + 1].strip(),
+        tleLines[idx + 2].strip(),
+      ]
+    })
+
+  return tles
+
+
+def fetch_tles(urls, out_dir="./data/tles", out_filename="all.json"):
+  makedirs(out_dir, exist_ok=True)
+
+  data = {}
+  for k,url in urls.items():
+    out_path = f"{out_dir}/{k.lower()}.txt"
+    try:
+      urllib.request.urlretrieve(url, out_path)
+      data[k.lower()] = get_tles_from_file(out_path)
+    except Exception as e:
+      print(f"loading: {k}")
+      print(f"An error occurred: {e}")
+
+  with open(f"{out_dir}/{out_filename}", "w") as ofp:
+    json.dump(data, ofp)
+
+
+if __name__ == "__main__":
+  fetch_tles(URLS, out_dir="./data/tles", out_filename="all.json")
