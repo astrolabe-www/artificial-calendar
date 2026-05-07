@@ -38,18 +38,22 @@ def get_tles_from_file(file):
 
 def fetch_tles(urls, out_dir="./data/tles", out_filename="all.json"):
   makedirs(out_dir, exist_ok=True)
+  all_json_out_path = f"{out_dir}/{out_filename}"
 
   data = {}
   for k,url in urls.items():
-    out_path = f"{out_dir}/{k.lower()}.txt"
+    txt_out_path = f"{out_dir}/{k.lower()}.txt"
+    json_out_path = f"{out_dir}/{k.lower()}.json"
     try:
-      urllib.request.urlretrieve(url, out_path)
-      data[k.lower()] = get_tles_from_file(out_path)
+      urllib.request.urlretrieve(url, txt_out_path)
+      data[k.lower()] = get_tles_from_file(txt_out_path)
+      with open(json_out_path, "w") as ofp:
+        json.dump(data[k.lower()], ofp)
     except Exception as e:
       print(f"loading: {k}")
       print(f"An error occurred: {e}")
 
-  with open(f"{out_dir}/{out_filename}", "w") as ofp:
+  with open(all_json_out_path, "w") as ofp:
     json.dump(data, ofp)
 
 
