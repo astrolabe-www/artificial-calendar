@@ -3,14 +3,6 @@
   <head>
     <meta charset="utf-8" />
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/2.0.0/p5.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/satellite.js@6.0.2/dist/satellite.min.js"></script>
-
-    <script src="./js/draw.js"></script>
-    <script src="./js/math.js"></script>
-    <script src="./js/path.js"></script>
-    <script src="./js/tle.js"></script>
-
     <style>
       html,
       body {
@@ -25,7 +17,15 @@
     </style>
   </head>
 
-  <script>
+  <script type="module">
+    import p5 from "https://cdn.jsdelivr.net/npm/p5@2.0.0/lib/p5.esm.js";
+    import { fetchTles } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@main/02%20JavaScript/azimuth-elevation/tleUtils.js";
+    import { solarAzimuthElevation, lunarAzimuthElevation, satelliteAzimuthElevation } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@main/02%20JavaScript/azimuth-elevation/azimuthElevation.js";
+
+    import { drawElevationRings, drawPath } from "./js/draw.js";
+    import { drawLabels, drawNames, drawCenterLabels } from "./js/draw.js";
+    import { getVisiblePaths, getStationaryPath, getMostVisitedHighestLowestPaths } from "./js/path.js";
+
     const NYC = {
       lat: 40.731266,
       lon: -73.997060,
@@ -76,203 +76,207 @@
     const names = [];
     const cLabels = [];
 
-    async function setup() {
-      createCanvas(windowWidth, windowHeight);
-      angleMode(DEGREES);
-      Object.assign(TLES, await fetchTles());
-      textFont("monospace");
-      textSize(12);
+    new p5((p) => {
+      p.setup = async () => {
+        p.createCanvas(p.windowWidth, p.windowHeight);
+        p.angleMode(p.DEGREES);
+        Object.assign(TLES, await fetchTles("https://astrolabe-www.github.io/artificial-calendar/"));
+        p.textFont("monospace");
+        p.textSize(12);
 
-      colors["BGND"] = color(255);
-      colors["SUN"] = color(247, 173, 39);
-      colors["MOON"] = color(156, 182, 224)
-      colors["STA"] = color(229, 51, 48);
-      colors["SAT0"] = color(68, 164, 52);
-      colors["SAT1"] = color(245, 187, 208);
-      colors["SAT2"] = color(133, 98, 50);
-    }
+        colors["BGND"] = p.color(255);
+        colors["SUN"] = p.color(247, 173, 39);
+        colors["MOON"] = p.color(156, 182, 224);
+        colors["STA"] = p.color(229, 51, 48);
+        colors["SAT0"] = p.color(0, 128, 0);
+        colors["SAT1"] = p.color(245, 187, 208);
+        colors["SAT2"] = p.color(133, 98, 50);
+      };
 
-    function draw() {
-      push();
-      translate(width/2, height/2);
-      scale(0.85);
-      const maxR = min(width/2, height/2);
-      const dotDim = 2;
+      p.draw = () => {
+        p.push();
+        p.translate(p.width/2, p.height/2);
+        p.scale(0.85);
+        const maxR = Math.min(p.width/2, p.height/2);
+        const dotDim = 2;
 
-      if (frameCount == 1) {
-        background(colors["BGND"]);
-        drawElevationRings(maxR);
-      }
+        if (p.frameCount == 1) {
+          p.background(colors["BGND"]);
+          drawElevationRings(p)(maxR);
+        }
 
-      if (frameCount == 2) {
-        const visibleSun = getVisiblePaths(2026, MONTH, LOCATION, ultimate.solarAzimuthElevation, SUN_OPT);
-        visibleSun.forEach((p, idx) => {
-          drawPath(p, 8, colors["SUN"], maxR);
-          if (idx % 2 != 0) return;
+        if (p.frameCount == 2) {
+          const visibleSun = getVisiblePaths(2026, MONTH, LOCATION, solarAzimuthElevation, SUN_OPT);
+          visibleSun.forEach((pth, idx) => {
+            drawPath(p)(pth, 8, colors["SUN"], maxR);
+            if (idx % 2 != 0) return;
 
-          cLabels.push({
-            name: "SUN",
-            loc: p.path[0],
-            date: p.start,
-            color: colors["SUN"],
-          });
-          cLabels.push({
-            name: "SUN",
-            loc: p.path.at(-1),
-            date: p.end,
-            color: colors["SUN"],
-          });
-        });
-
-        const visibleMoon = getVisiblePaths(2026, MONTH, LOCATION, gpt.lunarAzimuthElevation, MOON_OPT);
-        for (let idx = 0; idx < visibleMoon.length; idx += 7) {
-          drawPath(visibleMoon[idx], 4, colors["MOON"], maxR);
-          if (idx > 0){
             cLabels.push({
-              name: "MOON",
-              loc: visibleMoon[idx].path[0],
-              date: visibleMoon[idx].start,
-              color: colors["MOON"],
+              name: "SUN",
+              loc: pth.path[0],
+              date: pth.start,
+              color: colors["SUN"],
             });
+
             cLabels.push({
-              name: "MOON",
-              loc: visibleMoon[idx].path.at(-1),
-              date: visibleMoon[idx].end,
-              color: colors["MOON"],
+              name: "SUN",
+              loc: pth.path.at(-1),
+              date: pth.end,
+              color: colors["SUN"],
             });
+          });
+
+          const visibleMoon = getVisiblePaths(2026, MONTH, LOCATION, lunarAzimuthElevation, MOON_OPT);
+          for (let idx = 0; idx < visibleMoon.length; idx += 7) {
+            drawPath(p)(visibleMoon[idx], 4, colors["MOON"], maxR);
+            if (idx > 0){
+              cLabels.push({
+                name: "MOON",
+                loc: visibleMoon[idx].path[0],
+                date: visibleMoon[idx].start,
+                color: colors["MOON"],
+              });
+
+              cLabels.push({
+                name: "MOON",
+                loc: visibleMoon[idx].path.at(-1),
+                date: visibleMoon[idx].end,
+                color: colors["MOON"],
+              });
+            }
           }
         }
-      }
 
-      if (frameCount == 3) {
-        TLES.goes.forEach(s => {
-          STA_OPT["tle"] = s.tle;
-          const visibleGoes = getStationaryPath(2026, MONTH, LOCATION, satjs.satelliteAzimuthElevation, STA_OPT);
+        if (p.frameCount == 3) {
+          TLES.goes.forEach(s => {
+            STA_OPT["tle"] = s.tle;
+            const visibleGoes = getStationaryPath(2026, MONTH, LOCATION, satelliteAzimuthElevation, STA_OPT);
 
-          if (Object.keys(visibleGoes).length < 1) return;
+            if (Object.keys(visibleGoes).length < 1) return;
 
-          drawPath(visibleGoes, dotDim, colors["STA"], maxR);
-          names.push({
-            name: s.name,
-            loc: visibleGoes.path[0],
-            date: visibleGoes.start,
-            color: colors["STA"],
+            drawPath(p)(visibleGoes, dotDim, colors["STA"], maxR);
+            names.push({
+              name: s.name,
+              loc: visibleGoes.path[0],
+              date: visibleGoes.start,
+              color: colors["STA"],
+            });
           });
-        });
-      }
+        }
 
-      if (frameCount == 4) {
-        const noaaTles = TLES.noaa.filter(s => NOAA.includes(s.name));
-        const noaaMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, noaaTles, SAT_OPT);
-        drawPath(noaaMostVisited.highestPath, dotDim, colors["SAT2"], maxR);
-        labels.push({
-          name: noaaMostVisited.name,
-          loc: noaaMostVisited.highestPath.path[0],
-          date: noaaMostVisited.highestPath.start,
-          color: colors["SAT2"],
-        });
-      }
+        if (p.frameCount == 4) {
+          const noaaTles = TLES.noaa.filter(s => NOAA.includes(s.name));
+          const noaaMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, noaaTles, SAT_OPT);
+          drawPath(p)(noaaMostVisited.highestPath, dotDim, colors["SAT0"], maxR);
+          labels.push({
+            name: noaaMostVisited.name,
+            loc: noaaMostVisited.highestPath.path[0],
+            date: noaaMostVisited.highestPath.start,
+            color: colors["SAT0"],
+          });
+        }
 
-      if (frameCount == 5) {
-        const sssTles = TLES.sss.filter(s => SSS.includes(s.name));
-        const sssMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, sssTles, SAT_OPT);
-        drawPath(sssMostVisited.highestPath, dotDim, colors["SAT2"], maxR);
-        labels.push({
-          name: sssMostVisited.name,
-          loc: sssMostVisited.highestPath.path[0],
-          date: sssMostVisited.highestPath.start,
-          color: colors["SAT2"],
-        });
-      }
+        if (p.frameCount == 5) {
+          const sssTles = TLES.sss.filter(s => SSS.includes(s.name));
+          const sssMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, sssTles, SAT_OPT);
+          drawPath(p)(sssMostVisited.highestPath, dotDim, colors["SAT0"], maxR);
+          labels.push({
+            name: sssMostVisited.name,
+            loc: sssMostVisited.highestPath.path[0],
+            date: sssMostVisited.highestPath.start,
+            color: colors["SAT0"],
+          });
+        }
 
-      if (frameCount == 6) {
-        const sciTles = TLES.sci.filter(s => SCI.includes(s.name));
-        const sciMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, sciTles, SAT_OPT);
-        drawPath(sciMostVisited.highestPath, dotDim, colors["SAT2"], maxR);
-        labels.push({
-          name: sciMostVisited.name,
-          loc: sciMostVisited.highestPath.path[0],
-          date: sciMostVisited.highestPath.start,
-          color: colors["SAT2"],
-        });
-      }
+        if (p.frameCount == 6) {
+          const sciTles = TLES.sci.filter(s => SCI.includes(s.name)).slice(0, 10);
+          const sciMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, sciTles, SAT_OPT);
+          drawPath(p)(sciMostVisited.highestPath, dotDim, colors["SAT0"], maxR);
+          labels.push({
+            name: sciMostVisited.name,
+            loc: sciMostVisited.highestPath.path[0],
+            date: sciMostVisited.highestPath.start,
+            color: colors["SAT0"],
+          });
+        }
 
-      if (frameCount == 7) {
-        const gpsMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.gps, SAT_OPT);
-        drawPath(gpsMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
-        labels.push({
-          name: gpsMostVisited.name,
-          loc: gpsMostVisited.highestPath.path[0],
-          date: gpsMostVisited.highestPath.start,
-          color: colors["SAT1"],
-        });
-      }
+        if (p.frameCount == 7) {
+          const gpsMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.gps.slice(0, 10), SAT_OPT);
+          drawPath(p)(gpsMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
+          labels.push({
+            name: gpsMostVisited.name,
+            loc: gpsMostVisited.highestPath.path[0],
+            date: gpsMostVisited.highestPath.start,
+            color: colors["SAT1"],
+          });
+        }
 
-      if (frameCount == 8) {
-        const glonassMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.glonass, SAT_OPT);
-        drawPath(glonassMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
-        labels.push({
-          name: glonassMostVisited.name,
-          loc: glonassMostVisited.highestPath.path[0],
-          date: glonassMostVisited.highestPath.start,
-          color: colors["SAT1"],
-        });
-      }
+        if (p.frameCount == 8) {
+          const glonassMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.glonass.slice(0, 10), SAT_OPT);
+          drawPath(p)(glonassMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
+          labels.push({
+            name: glonassMostVisited.name,
+            loc: glonassMostVisited.highestPath.path[0],
+            date: glonassMostVisited.highestPath.start,
+            color: colors["SAT1"],
+          });
+        }
 
-      if (frameCount == 9) {
-        const galileoMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.galileo, SAT_OPT);
-        drawPath(galileoMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
-        labels.push({
-          name: galileoMostVisited.name,
-          loc: galileoMostVisited.highestPath.path[0],
-          date: galileoMostVisited.highestPath.start,
-          color: colors["SAT1"],
-        });
-      }
+        if (p.frameCount == 9) {
+          const galileoMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.galileo.slice(0, 10), SAT_OPT);
+          drawPath(p)(galileoMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
+          labels.push({
+            name: galileoMostVisited.name,
+            loc: galileoMostVisited.highestPath.path[0],
+            date: galileoMostVisited.highestPath.start,
+            color: colors["SAT1"],
+          });
+        }
 
-      if (frameCount == 10) {
-        const beidouMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.beidou, SAT_OPT);
-        drawPath(beidouMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
-        labels.push({
-          name: beidouMostVisited.name,
-          loc: beidouMostVisited.highestPath.path[0],
-          date: beidouMostVisited.highestPath.start,
-          color: colors["SAT1"],
-        });
-      }
+        if (p.frameCount == 10) {
+          const beidouMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.beidou.slice(0, 10), SAT_OPT);
+          drawPath(p)(beidouMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
+          labels.push({
+            name: beidouMostVisited.name,
+            loc: beidouMostVisited.highestPath.path[0],
+            date: beidouMostVisited.highestPath.start,
+            color: colors["SAT1"],
+          });
+        }
 
-      if (frameCount == -5) {
-        const starlinkMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.starlink.slice(0, 32), SAT_OPT);
-        drawPath(starlinkMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
-        labels.push({
-          name: starlinkMostVisited.name,
-          loc: starlinkMostVisited.highestPath.path[0],
-          date: starlinkMostVisited.highestPath.start,
-          color: colors["SAT1"],
-        });
-      }
+        if (p.frameCount == 11) {
+          const starlinkMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.starlink.slice(0, 10), SAT_OPT);
+          drawPath(p)(starlinkMostVisited.highestPath, dotDim, colors["SAT2"], maxR);
+          labels.push({
+            name: starlinkMostVisited.name,
+            loc: starlinkMostVisited.highestPath.path[0],
+            date: starlinkMostVisited.highestPath.start,
+            color: colors["SAT2"],
+          });
+        }
 
-      if (frameCount == -6) {
-        const kuiperMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.kuiper.slice(0, 32), SAT_OPT);
-        drawPath(kuiperMostVisited.highestPath, dotDim, colors["SAT1"], maxR);
-        labels.push({
-          name: kuiperMostVisited.name,
-          loc: kuiperMostVisited.highestPath.path[0],
-          date: kuiperMostVisited.highestPath.start,
-          color: colors["SAT1"],
-        });
-      }
+        if (p.frameCount == 12) {
+          const kuiperMostVisited = getMostVisitedHighestLowestPaths(2026, MONTH, LOCATION, TLES.kuiper.slice(0, 10), SAT_OPT);
+          drawPath(p)(kuiperMostVisited.highestPath, dotDim, colors["SAT2"], maxR);
+          labels.push({
+            name: kuiperMostVisited.name,
+            loc: kuiperMostVisited.highestPath.path[0],
+            date: kuiperMostVisited.highestPath.start,
+            color: colors["SAT2"],
+          });
+        }
 
-      if (frameCount == 11) {
-        drawLabels(labels, maxR);
-        drawNames(names, maxR);
-        drawCenterLabels(cLabels, maxR);
-        noLoop();
-      }
+        if (p.frameCount == 15) {
+          drawLabels(p)(labels, maxR);
+          drawNames(p)(names, maxR);
+          drawCenterLabels(p)(cLabels, maxR);
+          p.noLoop();
+        }
 
-      pop();
-    }
-  </script>
+        p.pop();
+      };
+    });
+</script>
 
   <body>
     <main></main>

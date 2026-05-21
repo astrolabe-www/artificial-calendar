@@ -1,4 +1,6 @@
-function pad2(num, pad="0") {
+import { satelliteAzimuthElevation } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@main/02%20JavaScript/azimuth-elevation/azimuthElevation.js";
+
+function pad2(num, pad = "0") {
   return String(num).padStart(2, pad);
 }
 
@@ -41,7 +43,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
       const { azimuth, elevation } = toAzEl(localDate, localTime, location, tle);
       if (elevation >= 0) {
         if (secondStep > secondStep0) {
-          daySecond = max(daySecond - secondStep - secondStep0, 0);
+          daySecond = Math.max(daySecond - secondStep - secondStep0, 0);
           secondStep = secondStep0;
           continue;
         }
@@ -107,7 +109,7 @@ function getStationaryPath(year, month, location, toAzEl, options) {
 }
 
 function getHighestElevation(path) {
-  return path.reduce((acc, azel) => max(acc, azel.elevation), 0);
+  return path.reduce((acc, azel) => Math.max(acc, azel.elevation), 0);
 }
 
 function getHighestLowestPaths(paths) {
@@ -128,7 +130,7 @@ function getMostVisited(year, month, location, tles, options) {
     options["tle"] = s.tle;
     return {
       name: s.name,
-      paths: getVisiblePaths(year, month, location, satjs.satelliteAzimuthElevation, options),
+      paths: getVisiblePaths(year, month, location, satelliteAzimuthElevation, options),
     };
   });
 
@@ -142,3 +144,5 @@ function getMostVisitedHighestLowestPaths(year, month, location, tles, options) 
 
   return { name: mostVisited.name, highestPath: mostVisitedHighest, lowestPath: mostVisitedLowest };
 }
+
+export { getVisiblePaths, getStationaryPath, getMostVisitedHighestLowestPaths };
