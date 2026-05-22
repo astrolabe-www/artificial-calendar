@@ -23,7 +23,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
 
   const localTime = { hour: 0, minute: 0, second: 0 };
   const localDate = { year: year, month: month, day: 1 };
-  const { numDays = 28, dayStep = 1, secondStep:secondStep0 = 60, tle = null } = options;
+  const { dayStart = 1, numDays = 28, dayStep = 1, secondStep:secondStep0 = 60, tle = null } = options;
 
   let secondStep = secondStep0;
 
@@ -31,7 +31,7 @@ function getVisiblePaths(year, month, location, toAzEl, options) {
   let pElevation = -1;
   let startMillis = 0;
 
-  for (let day = 1; day <= numDays; day += dayStep) {
+  for (let day = dayStart; day <= dayStart+numDays; day += dayStep) {
     localDate.day = day;
 
     for (let daySecond = 0; daySecond < 86400; daySecond += secondStep) {

@@ -19,7 +19,7 @@
 
   <script type="module">
     import p5 from "https://cdn.jsdelivr.net/npm/p5@2.0.0/lib/p5.esm.js";
-    import { fetchTles } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@main/02%20JavaScript/azimuth-elevation/tleUtils.js";
+    import { fetchTles } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@tgh/tle-utils/02%20JavaScript/azimuth-elevation/tleUtils.js";
     import { solarAzimuthElevation, lunarAzimuthElevation, satelliteAzimuthElevation } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@main/02%20JavaScript/azimuth-elevation/azimuthElevation.js";
 
     import { drawElevationRings, drawPath } from "./js/draw.js";
@@ -80,7 +80,7 @@
       p.setup = async () => {
         p.createCanvas(p.windowWidth, p.windowHeight);
         p.angleMode(p.DEGREES);
-        Object.assign(TLES, await fetchTles("https://astrolabe-www.github.io/artificial-calendar/"));
+        Object.assign(TLES, await fetchTles("https://astrolabe-www.github.io/artificial-calendar"));
         p.textFont("monospace");
         p.textSize(12);
 

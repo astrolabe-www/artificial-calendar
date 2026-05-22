@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      .date-time-menu {
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
+    </style>
+  </head>
+
+  <script type="module">
+    // Importing some stuff
+    import p5 from "https://cdn.jsdelivr.net/npm/p5@2.0.0/lib/p5.esm.js";
+    import { fetchTles } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@tgh/tle-utils/02%20JavaScript/azimuth-elevation/tleUtils.js";
+    import { solarAzimuthElevation, lunarAzimuthElevation, satelliteAzimuthElevation } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@main/02%20JavaScript/azimuth-elevation/azimuthElevation.js";
+
+    import { azel2xy, drawElevationRings } from "../js/draw.js";
+
+    // Location object with latitude, longitude and timezone difference from UTC
+    const NYC = {
+      lat: 40.731266,
+      lon: -73.997060,
+      tz: -4,
+    };
+
+    // Which satellite groups we want to look at.
+    // goes,noaa,sci: nasa scientific sats
+    // beidou,galileo,gps,glonass: gps sats
+    // starlink,kuiper: wifi sats
+    // sss: space station
+    // others can be found here: https://celestrak.org/NORAD/elements/index.php?FORMAT=tle
+    // and we have to add them to scripts/get_tles.py
+    const SAT_GROUPS_ALL = ["goes", "noaa", "starlink", "kuiper", "sss", "sci", "gps", "glonass", "galileo", "beidou"];
+
+    // let's look at gps and starlink
+    const SAT_GROUPS = ["starlink", "gps"];
+
+    // object to keep the satellite trajectory/location files (TLE files)
+    const TLES = {};
+
+    // p5js sketch in instance mode
+    new p5((p) => {
+      p.setup = async () => {
+        // fetch the satellite TLE files
+        Object.assign(TLES, await fetchTles("https://astrolabe-www.github.io/artificial-calendar", SAT_GROUPS));
+
+        // TLES will now have keys for each group and lists of satellites
+        // each sat in a list will have two keys: name and tle
+        console.log(TLES);
+
+        // p5js global stuff
+        p.createCanvas(p.windowWidth, p.windowHeight);
+        p.noLoop();
+
+        // azimuth-elevation angles are in degrees
+        p.angleMode(p.DEGREES);
+
+        // for labels, maybe
+        p.textFont("monospace");
+        p.textSize(12);        
+      };
+
+      p.draw = () => {
+        // let's plot every satellite that's above the horizon (elevation > 0)
+
+        // first, some p5js drawing setup
+        p.push();
+        p.translate(p.width / 2, p.height / 2);
+        p.scale(0.85);
+        p.background(255);
+
+        const maxRadius = Math.min(p.width / 2, p.height / 2);
+
+        // this function draws the azimuth-elevation rings
+        drawElevationRings(p)(maxRadius);
+
+        // let's get current date/time
+        const now = new Date();
+        const localDate = {
+          year: now.getFullYear(),
+          month: now.getMonth()+1,
+          day: now.getDate()
+        };
+
+        const localTime = {
+          hour: now.getHours(),
+          minute: now.getMinutes(),
+          second: now.getSeconds()
+        };
+
+        // let's draw all starlink satellites
+        TLES.starlink.forEach(sat => {
+          // get azimuth,elevation in degrees
+          const { azimuth, elevation } = satelliteAzimuthElevation(localDate, localTime, NYC, sat.tle);
+
+          // if visible
+          if (elevation > 0) {
+            // turn azimuth,elevation into x,y
+            const { x, y } = azel2xy(azimuth, elevation, maxRadius);
+
+            // draw a dot
+            p.noStroke();
+            p.fill(150, 75, 0);
+            p.ellipse(x, y, 4);
+          }
+        });
+
+        // can repeat for gps
+        // mostly same code, just a different color, and added text label
+        TLES.gps.forEach(sat => {
+          // get azimuth,elevation in degrees
+          const { azimuth, elevation } = satelliteAzimuthElevation(localDate, localTime, NYC, sat.tle);
+
+          // if visible
+          if (elevation > 0) {
+            // turn azimuth,elevation into x,y
+            const { x, y } = azel2xy(azimuth, elevation, maxRadius);
+
+            // draw a dot
+            p.noStroke();
+            p.fill(255, 105, 180);
+            p.ellipse(x, y, 8);
+
+            // label
+            const tWidth = p.textWidth(sat.name);
+            p.text(sat.name, x - tWidth / 2, y - 8);
+          }
+        });
+
+        // can also get sun and moon locations using similar functions
+        const { azimuth:sunAz, elevation:sunEl } = solarAzimuthElevation(localDate, localTime, NYC);
+        const { azimuth:moonAz, elevation:moonEl } = lunarAzimuthElevation(localDate, localTime, NYC);
+
+        const { x:sunX, y:sunY } = azel2xy(sunAz, sunEl, maxRadius);
+        const { x:moonX, y:moonY } = azel2xy(moonAz, moonEl, maxRadius);
+
+        if (sunEl > 0) {
+          p.noStroke();
+          p.fill(250, 150, 0);
+          p.ellipse(sunX, sunY, 16);
+        }
+
+        if (moonEl > 0) {
+          p.noStroke();
+          p.fill(150);
+          p.ellipse(moonX, moonY, 8);
+        }
+
+        p.pop();
+      };
+    });
+
+  </script>
+
+  <body>
+    <main></main>
+  </body>
+</html>
