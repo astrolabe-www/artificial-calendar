@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      .date-time-menu {
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
+    </style>
+  </head>
+
+  <script type="module">
+    // Importing some stuff
+    import p5 from "https://cdn.jsdelivr.net/npm/p5@2.0.0/lib/p5.esm.js";
+    import { fetchTles } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@tgh/tle-utils/02%20JavaScript/azimuth-elevation/tleUtils.js";
+    import { solarAzimuthElevation, lunarAzimuthElevation, satelliteAzimuthElevation } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@main/02%20JavaScript/azimuth-elevation/azimuthElevation.js";
+
+    import { getVisiblePaths } from "../js/path.js";
+    import { azel2xy, drawElevationRings } from "../js/draw.js";
+
+    // Location object with latitude, longitude and timezone difference from UTC
+    const NYC = {
+      lat: 40.731266,
+      lon: -73.997060,
+      tz: -4,
+    };
+
+    // let's look at gps, galileo and ISS
+    const SAT_GROUPS = ["galileo", "gps", "sss"];
+
+    // object to keep the satellite trajectory/location files (TLE files)
+    const TLES = {};
+
+    // p5js sketch in instance mode
+    new p5((p) => {
+      p.setup = async () => {
+        // fetch the satellite TLE files
+        Object.assign(TLES, await fetchTles("https://astrolabe-www.github.io/artificial-calendar", SAT_GROUPS));
+
+        // p5js global stuff
+        p.createCanvas(p.windowWidth, p.windowHeight);
+        p.noLoop();
+        p.angleMode(p.DEGREES);
+        p.textFont("monospace");
+        p.textSize(12);        
+      };
+
+      p.draw = () => {
+        // let's plot path of first gps and first galileo sats
+
+        // first, some p5js drawing setup
+        p.push();
+        p.translate(p.width / 2, p.height / 2);
+        p.scale(0.85);
+        p.background(255);
+
+        const maxRadius = Math.min(p.width / 2, p.height / 2);
+
+        // this function draws the azimuth-elevation rings
+        drawElevationRings(p)(maxRadius);
+
+        // let's get current date
+        // we'll iterate over time
+        const now = new Date();
+        const localDate = {
+          year: now.getFullYear(),
+          month: now.getMonth()+1,
+          day: now.getDate()
+        };
+
+        // let's get first gps and first galileo sats from lists
+        const firstGps = TLES.gps[0];
+        const firstGal = TLES.galileo[0];
+
+        // iterate over all minutes of the day
+        for(let dayMinute = 0; dayMinute < 24 * 60; dayMinute += 1) {
+          const hour = parseInt(dayMinute / 60);
+          const minute = dayMinute % 60;
+
+          const localTime = {
+            hour,
+            minute,
+            second: 0,
+          }
+
+          // get azimuth,elevation in degrees
+          const { azimuth:gpsAz, elevation:gpsEl } = satelliteAzimuthElevation(localDate, localTime, NYC, firstGps.tle);
+          const { azimuth:galAz, elevation:galEl } = satelliteAzimuthElevation(localDate, localTime, NYC, firstGal.tle);
+
+          // if gps visible
+          if (gpsEl > 0) {
+            const { x, y } = azel2xy(gpsAz, gpsEl, maxRadius);
+            p.noStroke();
+            p.fill(255, 105, 180);
+            p.ellipse(x, y, 4);
+          }
+
+          // if galileo visible
+          if (galEl > 0) {
+            const { x, y } = azel2xy(galAz, galEl, maxRadius);
+            p.noStroke();
+            p.fill(150, 75, 0);
+            p.ellipse(x, y, 4);
+          }
+        }
+
+        // We have a function that helps get all visible paths of a satellite over a given month
+        // getVisiblePaths(year, month, location, toAzEl, options)
+        // year, month and location are self-explanatory
+
+        // toAzEl is the function that calculates azimuth and elevation of a celestial body
+        // so, either: solarAzimuthElevation, lunarAzimuthElevation, satelliteAzimuthElevation
+
+        // options is an object with the following optional keys:
+        // dayStart: which day of the month to start tracking
+        // numDays: how many days to track
+        // dayStep: how often to track in days. 1 is for everyday, 2 for every other day, and so on
+        // secondStep: how often to plot in seconds. 1 is every second, 60 is every minute (like above)
+        // tle: the tle info if this is a satellite
+
+        // so, to get all visible passes of the ISS for the coming weekend of May 22-25, 2026 we can use something like:
+        const iss = TLES.sss[0];
+        const pathOptions = {
+          dayStart: 22,
+          numDays: 4,
+          dayStep: 1,
+          secondStep: 10,
+          tle: iss.tle,
+        };
+
+        const visiblePaths = getVisiblePaths(2026, 5, NYC, satelliteAzimuthElevation, pathOptions);
+
+        // visiblePaths is a list of objects
+        // each object is a path above the horizon, with:
+        // a start time, end time and a list of azimuth, elevation locations
+        console.log(visiblePaths);
+
+        visiblePaths.forEach(pth => {
+          p.stroke(70, 130, 180);
+          p.noFill();
+          p.beginShape();
+          pth.path.forEach(({azimuth, elevation}) => {
+            const { x, y } = azel2xy(azimuth, elevation, maxRadius);
+            p.vertex(x, y);
+          });
+          p.endShape();
+        });
+
+        p.pop();
+      };
+    });
+
+  </script>
+
+  <body>
+    <main></main>
+  </body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      .date-time-menu {
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
+    </style>
+  </head>
+
+  <script type="module">
+    import p5 from "https://cdn.jsdelivr.net/npm/p5@2.0.0/lib/p5.esm.js";
+    import { fetchTles } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@tgh/tle-utils/02%20JavaScript/azimuth-elevation/tleUtils.js";
+    import { solarAzimuthElevation, lunarAzimuthElevation, satelliteAzimuthElevation } from "https://cdn.jsdelivr.net/gh/thiagohersan/Satellite-Tracking-Station@main/02%20JavaScript/azimuth-elevation/azimuthElevation.js";
+
+    import { azel2xy, drawElevationRings, drawLabels } from "../js/draw.js";
+
+    const NYC = {
+      lat: 40.731266,
+      lon: -73.997060,
+      tz: -4,
+    };
+
+    const LOCATION = NYC;
+    const MONTH = 3;
+    const NDAYS = 19;
+
+    const SUN_OPT = {
+      numDays: NDAYS,
+      dayStep: 7,
+      secondStep: 2*60,
+    };
+
+    const MOON_OPT = {
+      numDays: NDAYS,
+      dayStep: 1,
+      secondStep: 60,
+    };
+
+    const SAT_OPT = {
+      numDays: NDAYS,
+      dayStep: 1,
+      secondStep: 15,
+    };
+
+    const TLES = {};
+    const colors = {};
+    new p5((p) => {
+      p.setup = async () => {
+        p.createCanvas(p.windowWidth, p.windowHeight);
+        p.angleMode(p.DEGREES);
+        Object.assign(TLES, await fetchTles("https://astrolabe-www.github.io/artificial-calendar"));
+        p.textFont("monospace");
+        p.textSize(12);
+        p.noLoop();
+
+        colors["BGND"] = p.color(255);
+        colors["SUN"] = p.color(247, 173, 39);
+        colors["MOON"] = p.color(156, 182, 224);
+        colors["STA"] = p.color(229, 51, 48);
+        colors["SAT0"] = p.color(0, 128, 0);
+        colors["SAT1"] = p.color(245, 187, 208);
+        colors["SAT2"] = p.color(133, 98, 50);
+
+        const datePickerEl = document.getElementById("date-picker");
+        const timePickerEl = document.getElementById("time-picker");
+        const now = new Date();
+        datePickerEl.value = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, "0")}-${now.getDate().toString().padStart(2, "0")}`;
+        timePickerEl.value = `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
+
+        [datePickerEl, timePickerEl].forEach(el => {
+          el.addEventListener("input", drawSats(p));
+        });
+        drawSats(p)();
+      };
+    });
+
+    function drawSats(p) {
+      return () => {
+        p.push();
+        p.translate(p.width/2, p.height/2);
+        p.scale(0.85);
+        const maxR = Math.min(p.width/2, p.height/2);
+        const dotDim = 2;
+
+        const labels = [];
+
+        p.background(colors["BGND"]);
+        drawElevationRings(p)(maxR);
+
+        const datePickerEl = document.getElementById("date-picker");
+        const timePickerEl = document.getElementById("time-picker");
+        const dateParts = datePickerEl.value.split("-").map(x => parseInt(x));
+        const timeParts = timePickerEl.value.split(":").map(x => parseInt(x));
+
+        const localTime = { hour: timeParts[0], minute: timeParts[1], second: timeParts[2] };
+        const localDate = { year: dateParts[0], month: dateParts[1], day: dateParts[2] };
+
+        p.noStroke();
+        p.fill(colors["SAT0"]);
+
+        TLES.starlink.slice(0, 256).forEach(satTle => {
+          const { azimuth, elevation } = satelliteAzimuthElevation(localDate, localTime, LOCATION, satTle.tle);
+          if (elevation > 5) {
+            const { x, y } = azel2xy(azimuth, elevation, maxR);
+            p.ellipse(x, y, 4 * dotDim);
+
+            labels.push({
+              name: satTle.name,
+              loc: { azimuth, elevation },
+              date: `${datePickerEl.value}\n${timePickerEl.value}`,
+              color: colors["SAT0"],
+            });
+          }
+        });
+
+        p.fill(colors["SAT1"]);
+        TLES.kuiper.slice(0, 256).forEach(satTle => {
+          const { azimuth, elevation } = satelliteAzimuthElevation(localDate, localTime, LOCATION, satTle.tle);
+          if (elevation > 5) {
+            const { x, y } = azel2xy(azimuth, elevation, maxR);
+            p.ellipse(x, y, 4 * dotDim);
+
+            labels.push({
+              name: satTle.name,
+              loc: { azimuth, elevation },
+              date: `${datePickerEl.value}\n${timePickerEl.value}`,
+              color: colors["SAT1"],
+            });
+          }
+        });
+
+        const { azimuth:sunAz, elevation:sunEl } = solarAzimuthElevation(localDate, localTime, LOCATION);
+        if (sunEl > 5) {
+          const { x:sunX, y:sunY } = azel2xy(sunAz, sunEl, maxR);
+
+          p.fill(colors["SUN"]);
+          p.ellipse(sunX, sunY, 6 * dotDim);
+
+          labels.push({
+            name: "SUN",
+            loc: { azimuth:sunAz, elevation:sunEl },
+            date: `${datePickerEl.value}\n${timePickerEl.value}`,
+            color: colors["SUN"],
+          });
+        }
+
+        const { azimuth:moonAz, elevation:moonEl } = lunarAzimuthElevation(localDate, localTime, LOCATION);
+        if (moonEl > 5) {
+          const { x:moonX, y:moonY } = azel2xy(moonAz, moonEl, maxR);
+
+          p.fill(colors["MOON"]);
+          p.ellipse(moonX, moonY, 4 * dotDim);
+
+          labels.push({
+            name: "MOON",
+            loc: { azimuth:moonAz, elevation:moonEl },
+            date: `${datePickerEl.value}\n${timePickerEl.value}`,
+            color: colors["MOON"],
+          });
+        }
+
+        drawLabels(p)(labels, maxR);
+        p.pop();
+      };
+    }
+
+  </script>
+
+  <body>
+    <main></main>
+    <div class="date-time-menu">
+      <input id="date-picker" type="date" />
+      <input id="time-picker" type="time" />
+    </div>
+  </body>
+</html>
